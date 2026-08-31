@@ -33,6 +33,16 @@ import {
   type FacetKey,
   type Selected,
 } from "../../lib/search/url-state";
+import { registerWebMcpTools } from "../../lib/webmcp/bridge";
+import {
+  createSearchTools,
+  toSnapshot,
+  toToolHit,
+  type SearchOutcome,
+  type SearchSnapshot,
+  type SearchToolHandle,
+} from "../../lib/webmcp/search-tools";
+import { planFacetChanges } from "../../lib/webmcp/facet-plan";
 
 const DEBOUNCE_MS = 300;
 /** The first page of results (offset 0). Every
@@ -43,6 +53,9 @@ const LOAD_MORE_PAGE_SIZE = 60;
 const SET_FACET_LIMIT = 15;
 /** Categories shown in the rail before "show all" - same pattern as sets. */
 const CATEGORY_FACET_LIMIT = 15;
+/** How long a WebMCP tool waits for a search to land before it answers the
+    agent with an error instead of hanging on an unresolved promise. */
+const WEBMCP_TIMEOUT_MS = 15000;
 
 const TIER_LABEL: Record<string, string> = {
   T1: "Restyles fully",
@@ -222,6 +235,28 @@ export default function SearchIsland({
 
   const gridRef = useRef<HTMLDivElement>(null);
   const requestId = useRef(0);
+
+  /* WebMCP: an agent driving this page calls tools that must resolve with what
+     the human can actually SEE, so every tool that runs a search waits here
+     until the island's own fetch has landed and re-rendered the grid. The
+     waiters are drained by `settleSearch` from the one effect below that owns
+     the request - there is no second, agent-only search path, which is what
+     keeps the daily meter honest. */
+  const searchWaiters = useRef<Array<(state: SearchSnapshot) => void>>([]);
+  /* Settled with the query and facets that PRODUCED this outcome (the fetch
+     effect's own closure), not with whatever the component has re-rendered to
+     since - so the snapshot an agent receives always describes the screenful
+     it is being handed. */
+  const settleSearch = useCallback(
+    (outcome: SearchOutcome, appliedQuery: string, appliedSelected: Selected) => {
+      const waiters = searchWaiters.current;
+      if (waiters.length === 0) return;
+      searchWaiters.current = [];
+      const state = toSnapshot(appliedQuery, appliedSelected, outcome);
+      for (const resolve of waiters) resolve(state);
+    },
+    [],
+  );
 
   /* Quick view, ENTRY 2: a result tile click swaps the panel content to the
      icon quick-view instead of navigating away - only when this instance is
@@ -418,6 +453,7 @@ export default function SearchIsland({
       setLimited(null);
       setLoading(false);
       setError(null);
+      settleSearch({ status: "idle" }, query, selected);
       return;
     }
 
@@ -437,23 +473,42 @@ export default function SearchIsland({
         if (payload.limited) {
           setLimited(payload);
           setResult(null);
+          settleSearch({ status: "limited", meter: payload.meter }, query, selected);
         } else {
           setLimited(null);
           setResult(payload);
           setFocusIndex(0);
+          settleSearch(
+            {
+              status: "results",
+              total: payload.total,
+              hits: payload.hits.map(toToolHit),
+              meter: payload.meter,
+            },
+            query,
+            selected,
+          );
         }
       })
       .catch((cause: unknown) => {
         if (id !== requestId.current) return;
         if (cause instanceof DOMException && cause.name === "AbortError") return;
         setError("Search is unavailable right now.");
+        settleSearch(
+          { status: "error", message: "Search is unavailable right now." },
+          query,
+          selected,
+        );
       })
       .finally(() => {
         if (id === requestId.current) setLoading(false);
       });
 
     return () => controller.abort();
-  }, [mode, buildParams]);
+    /* `query` and `selected` are read only to describe the request that was
+       just made; they change in lockstep with `buildParams`, so listing them
+       adds no extra run of this effect. */
+  }, [mode, buildParams, settleSearch, query, selected]);
 
   const hits = useMemo(
     () => [...(result?.hits ?? []), ...extraHits],
@@ -572,7 +627,11 @@ export default function SearchIsland({
   };
 
   const facets = result?.facets ?? {};
-  const toggle = (key: FacetKey, value: string) => {
+  /* Stable identities (useCallback with no deps - `setSelected` is stable):
+     the WebMCP handle below holds on to these for the life of the island and
+     presses them on an agent's behalf, so re-creating them every render would
+     re-register the whole tool set every render. */
+  const toggle = useCallback((key: FacetKey, value: string) => {
     setSelected((current) => {
       const list = current[key];
       return {
@@ -582,16 +641,126 @@ export default function SearchIsland({
           : [...list, value],
       };
     });
-  };
+  }, []);
 
   /* Single-select: picking a category swaps it in; picking the same one
      again clears it. Unlike toggle() above, which builds a list. */
-  const selectCategory = (slug: string) => {
+  const selectCategory = useCallback((slug: string) => {
     setSelected((current) => ({
       ...current,
       category: current.category === slug ? null : slug,
     }));
-  };
+  }, []);
+
+  /* ---------------------------------------------------------------------
+     WebMCP: the agent-facing half of this island.
+
+     A browser agent (Chrome 149+ behind the WebMCP flag, ChatGPT's desktop
+     browser) can call the tools registered below. They do not run a private
+     search on the side - they set this component's state and wait for this
+     component's fetch, so the human watching sees the query appear in the
+     box, the pills light up in the rail, the grid re-render and the URL
+     change. One screen, two operators.
+
+     That also means an agent is metered exactly like the person is: there is
+     no second request path for it to use.
+
+     `latestState` is refreshed after every commit so a tool call that arrives
+     between renders reads what is on screen, not what was on screen when the
+     handle was built. Written from an effect rather than during render: it
+     must follow the DOM, not a render pass React may still discard.
+     --------------------------------------------------------------------- */
+  const latestState = useRef({ query, selected, result, limited, loading, error });
+  useEffect(() => {
+    latestState.current = { query, selected, result, limited, loading, error };
+  });
+
+  const webmcpHandle = useMemo<SearchToolHandle>(() => {
+    const readOutcome = (): SearchOutcome => {
+      const state = latestState.current;
+      if (state.limited) return { status: "limited", meter: state.limited.meter };
+      if (state.error) return { status: "error", message: state.error };
+      if (state.result) {
+        return {
+          status: "results",
+          total: state.result.total,
+          hits: state.result.hits.map(toToolHit),
+          meter: state.result.meter,
+        };
+      }
+      return { status: "idle" };
+    };
+
+    const readSnapshot = (): SearchSnapshot => {
+      const state = latestState.current;
+      return toSnapshot(state.query, state.selected, readOutcome());
+    };
+
+    /* Resolves when the fetch effect above next settles. The timeout is a
+       backstop rather than an expected path: an agent left hanging on a
+       promise forever is worse than one told the page went quiet. */
+    const waitForResults = () =>
+      new Promise<SearchSnapshot>((resolve) => {
+        searchWaiters.current.push(resolve);
+        window.setTimeout(() => {
+          resolve(
+            toSnapshot(latestState.current.query, latestState.current.selected, {
+              status: "error",
+              message: "The search did not finish in time.",
+            }),
+          );
+        }, WEBMCP_TIMEOUT_MS);
+      });
+
+    /* The one path both tools take: optionally change the query, then press
+       the facet pills that `planFacetChanges` says are needed, then wait for
+       the results those changes produce. */
+    const apply = (
+      nextQuery: string | null,
+      request: Parameters<SearchToolHandle["refine"]>[0],
+    ) => {
+      const state = latestState.current;
+      const operations = planFacetChanges(state.selected, request);
+      const queryChanged = nextQuery !== null && nextQuery !== state.query;
+
+      if (queryChanged) {
+        setInput(nextQuery);
+        setCommitted(nextQuery);
+      }
+      for (const operation of operations) {
+        if (operation.kind === "toggle") toggle(operation.key, operation.value);
+        else selectCategory(operation.slug);
+      }
+
+      /* Nothing moved and nothing is in flight: the screen already answers
+         the question, so answer it now instead of waiting for a re-render
+         that is never coming. */
+      if (!queryChanged && operations.length === 0 && !state.loading) {
+        return Promise.resolve(readSnapshot());
+      }
+      return waitForResults();
+    };
+
+    return {
+      search: ({ query: nextQuery, sets, category }) =>
+        apply(nextQuery.trim(), {
+          ...(sets === undefined ? {} : { sets }),
+          ...(category === undefined ? {} : { category }),
+        }),
+      refine: (request) => apply(null, request),
+      snapshot: readSnapshot,
+      navigate: (path) => window.location.assign(path),
+    };
+  }, [toggle, selectCategory]);
+
+  useEffect(() => {
+    /* Only the library page itself offers these. The same island also powers
+       a collection's "Add icons" slide-over (`collectionTarget`), and two
+       live registrations would give the agent two tools with one name and no
+       way to tell which screen it was driving. */
+    if (collectionTarget) return;
+    return registerWebMcpTools(createSearchTools(webmcpHandle));
+  }, [collectionTarget, webmcpHandle]);
 
   /* Selected sets always stay visible, so a filter can be removed from the
      rail even when the list is collapsed or filtered to something else. */
