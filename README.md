@@ -15,7 +15,7 @@ Icon aggregators solve finding an icon. They do not solve the two problems that 
 - **Style engine**: recolor, resize, restroke, rotate, flip and pad any icon that supports it - live on the icon page, with every export format updating as you edit.
 - **9 export formats**: SVG, React JSX/TSX, Vue, Svelte, SwiftUI `Shape` code, Xcode asset catalogs, PNG at any size, and data URIs. The native half (SwiftUI, asset catalogs) is the part other aggregators do not offer.
 - **Collections**: save icons, set collection-level styles (anchor icon, color, stroke, size, format), duplicate to make style variants, and download the whole set as a zip with per-set license attribution included.
-- **Free accounts**: email magic link or Google. An account adds 5 collections, unlimited search and an MCP key. Everything else works without one - anonymous visitors get every export format and 25 searches a day.
+- **Free accounts**: email magic link, no password. An account adds 5 collections, unlimited search and an MCP key. Everything else works without one - anonymous visitors get every export format and 25 searches a day.
 - **A macOS app**: Spotlight-style hotkey search, offline, copies code straight to the clipboard.
 
 ## For coding agents
