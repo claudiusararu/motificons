@@ -30,7 +30,10 @@ const NOTE: Partial<Record<ExportFormat, string>> = {
     "Base64-encoded, at the cost of being larger than the plain SVG - drop it into an img src, a CSS background-image or a mask-image.",
 };
 
-const SWIFTUI_NOTE: Record<SwiftUiKind, string> = {
+/* Exported for IconEditor.tsx's WebMCP handle, which reports a format as
+   unsupported to an agent with the same sentence the tab prints to the human -
+   one wording, one source. */
+export const SWIFTUI_NOTE: Record<SwiftUiKind, string> = {
   shape:
     "Exports as a SwiftUI Shape: fill it, stroke it or animate it like any built-in shape.",
   view: "This artwork is multicolor, so it exports as a layered SwiftUI View - one Shape per color in a ZStack, because a single Shape can only hold one fill.",
@@ -43,7 +46,13 @@ type PanelContent =
   | { kind: "image" }
   | { kind: "catalog"; asset: string; svgName: string; json: string; html: string };
 
-function codeFor(
+/**
+ * The one place a format turns into code. Exported so IconEditor.tsx's
+ * `get_icon_code` WebMCP tool answers an agent with the very string this panel
+ * puts on the screen, rather than a second rendering path that could drift
+ * from it.
+ */
+export function codeFor(
   id: ExportFormat,
   icon: IconSource,
   edits: IconEdits,
@@ -128,16 +137,21 @@ export default function FormatPreviewPanel({
   edits,
   size,
   preferredFormat = null,
+  onFormatChange,
 }: {
   icon: IconSource;
   tier: Tier;
   edits: IconEdits;
   size: number;
   /** Preselect a tab - the same effect as clicking that tab by hand. `null`
-      returns to the panel's own "svg" default. Not driven by anything today;
-      kept as an extension point for a future caller that wants to preselect
-      a format (e.g. a collection's preferred export format). */
+      returns to the panel's own "svg" default. IconEditor.tsx drives this so
+      an agent's `get_icon_code` / `download_icon` call opens the tab it is
+      talking about; a future caller could use it for, say, a collection's
+      preferred export format. */
   preferredFormat?: ExportFormat | null;
+  /** Fires whenever the human switches tabs, so a parent driving
+      `preferredFormat` does not go stale behind their clicks. */
+  onFormatChange?: (format: ExportFormat) => void;
 }) {
   const [activeTab, setActiveTab] = useState<ExportFormat>("svg");
   const [copied, setCopied] = useState(false);
@@ -219,6 +233,7 @@ export default function FormatPreviewPanel({
     setActiveTab(id);
     setCopied(false);
     setNotice(null);
+    onFormatChange?.(id);
   };
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {

@@ -118,7 +118,17 @@ const breadcrumbs = breadcrumbSchema([
           the format panel can stay live with the controls' state without a
           cross-island store. */}
       <div class="mt-8">
-        <IconEditor client:load icon={icon} tier={set.tier} />
+        <IconEditor
+          client:load
+          icon={icon}
+          tier={set.tier}
+          meta={{
+            setName: set.name,
+            style: set.styles.length === 1 ? (set.styles[0] ?? null) : null,
+            license: set.license.spdx || set.license.title,
+            attributionRequired: policy.attributionRequired,
+          }}
+        />
       </div>
 
       {/* Related icons are fetched and rendered client-side, after this page's
