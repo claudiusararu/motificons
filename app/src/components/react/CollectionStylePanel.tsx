@@ -1,31 +1,20 @@
 import { useMemo, useState, type SyntheticEvent } from "react";
 import type { IconEdits } from "../../lib/transforms/svg-doc";
-import { computeStyleTargets, targetsSummary, type ComputedStyleTargets } from "../../lib/style-targets";
+import { computeStyleTargets, targetsSummary } from "../../lib/style-targets";
+import { saveCollectionStyles, type CollectionStyleValues } from "../../lib/collection-style-save";
 import type { ExportFormat } from "../../lib/transforms/formats";
 import type { CollectionIconItem } from "./CollectionIconGrid";
 import { StyledIconGlyph } from "./StyledIconGlyph";
 import { Choice, ColorField, Group, SIZES, STROKE_WIDTHS } from "./editor/Controls";
 import { CheckIcon, ErrorLine, SpinnerIcon } from "./save/icons";
 
-export interface CollectionStyleSettings {
-  anchorIconId: string | null;
-  computedTargets: ComputedStyleTargets | null;
-  color: string | null;
-  strokeWidth: number | null;
-  size: number | null;
-  exportFormat: ExportFormat;
-}
+/** The saved-look shape, defined next to the request that writes it
+    (lib/collection-style-save.ts) and re-exported here because every
+    consumer on this page already imports it from this panel. One type, one
+    save path, no drift. */
+export type CollectionStyleSettings = CollectionStyleValues;
 
 type SaveStatus = "idle" | "loading" | "error" | "success";
-
-interface StyleSettingsResponseDTO {
-  anchorIconId: string | null;
-  computedTargets: CollectionStyleSettings["computedTargets"];
-  color: string | null;
-  strokeWidth: number | null;
-  size: number | null;
-  exportFormat: ExportFormat;
-}
 
 /**
  * "Set collection styles": a visual
@@ -112,35 +101,22 @@ export default function CollectionStylePanel({
     setStatus("loading");
     setError("");
 
-    try {
-      const response = await fetch(`/api/collections/${collectionId}/style`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ anchorIconId, color, strokeWidth, size, exportFormat: format }),
-      });
-      const data = (await response.json().catch(() => null)) as
-        | { error?: string; settings?: StyleSettingsResponseDTO }
-        | null;
+    const result = await saveCollectionStyles(collectionId, {
+      anchorIconId,
+      color,
+      strokeWidth,
+      size,
+      exportFormat: format,
+    });
 
-      if (!response.ok || !data?.settings) {
-        setStatus("error");
-        setError(data?.error ?? "Something went wrong. Try again.");
-        return;
-      }
-
-      setStatus("success");
-      onSaved({
-        anchorIconId: data.settings.anchorIconId,
-        computedTargets: data.settings.computedTargets,
-        color: data.settings.color,
-        strokeWidth: data.settings.strokeWidth,
-        size: data.settings.size,
-        exportFormat: data.settings.exportFormat,
-      });
-    } catch {
+    if (!result.ok) {
       setStatus("error");
-      setError("Something went wrong. Try again.");
+      setError(result.error);
+      return;
     }
+
+    setStatus("success");
+    onSaved(result.settings);
   }
 
   const anchorItem = items.find((item) => item.iconId === anchorIconId) ?? null;

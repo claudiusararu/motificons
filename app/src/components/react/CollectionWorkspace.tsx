@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Tier } from "../../lib/data";
 import type { IconEdits } from "../../lib/transforms/svg-doc";
 import SearchIsland, {
@@ -11,6 +11,17 @@ import CollectionIconGrid, { type CollectionIconItem } from "./CollectionIconGri
 import CollectionStylePanel, { type CollectionStyleSettings } from "./CollectionStylePanel";
 import CollectionDownloadPanel from "./CollectionDownloadPanel";
 import IconQuickView from "./IconQuickView";
+import type { CollectionIconLicense } from "../../lib/collection-download";
+import { saveCollectionStyles } from "../../lib/collection-style-save";
+import { registerWebMcpTools } from "../../lib/webmcp/bridge";
+import {
+  createCollectionTools,
+  type CollectionDownloadResult,
+  type CollectionSnapshot,
+  type CollectionStyleReport,
+  type CollectionStyleRequest,
+  type CollectionToolHandle,
+} from "../../lib/webmcp/collection-tools";
 
 /** el:brush (pipeline/dist/bodies/el.jsonl) - the same path data as
     Icon.astro's "brush" glyph, duplicated inline because
@@ -68,6 +79,36 @@ function DownloadIcon() {
   );
 }
 
+/** What /api/icon/[prefix]/[name].json answers with - everything a tile
+    needs that a SearchHit (or an agent's bare prefix/name) cannot carry. */
+interface IconDetailDTO {
+  body: string;
+  width: number;
+  height: number;
+  tier: Tier | null;
+  license: CollectionIconLicense | null;
+}
+
+/** How long a WebMCP `download_collection` call waits for the zip flow to
+    finish before it tells the agent it cannot vouch for the result. Generous
+    on purpose: the panel fetches every icon from /api/export, and a large
+    collection on a slow connection is slow, not broken. */
+const DOWNLOAD_TIMEOUT_MS = 120_000;
+
+/** The style settings, in the shape the WebMCP tools speak: an icon pair
+    instead of a "prefix:name" string, and no server-computed targets (an
+    agent can do nothing with a fingerprint it cannot render). */
+function toStyleReport(settings: CollectionStyleSettings): CollectionStyleReport {
+  const [prefix, name] = (settings.anchorIconId ?? "").split(":");
+  return {
+    anchorIcon: prefix && name ? { prefix, name } : null,
+    color: settings.color,
+    strokeWidth: settings.strokeWidth,
+    size: settings.size,
+    exportFormat: settings.exportFormat,
+  };
+}
+
 /**
  * The collection detail page's client-managed half: the icon grid, the
  * "Add icons" slide-over (a full SearchIsland reused wholesale rather than
@@ -80,6 +121,14 @@ function DownloadIcon() {
  * Rename and Duplicate (items 3 and 4) live in CollectionHeaderControls.tsx
  * instead - neither needs to share state with the grid (Duplicate navigates
  * away entirely), so they stay a separate, simpler island next to the H1.
+ *
+ * WEBMCP: this component is also what an agent driving the browser can
+ * operate (lib/webmcp/collection-tools.ts). Because all four surfaces
+ * already share their state here, the tools need no machinery of their own -
+ * they call the same functions the buttons call, so an agent adding an icon
+ * or setting a shared look produces exactly the tile and the re-render the
+ * human would have produced by hand, on the screen they are already
+ * watching. There is deliberately no agent-only fetch anywhere below.
  */
 export default function CollectionWorkspace({
   collectionId,
@@ -113,6 +162,24 @@ export default function CollectionWorkspace({
   const [styleOpen, setStyleOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
 
+  /* The Add-icons panel's embedded search, when something other than the
+     human opened it: `open_add_icons_panel` can pre-run a query so the
+     person lands on candidates instead of an empty box. The nonce remounts
+     the SearchIsland (it seeds from `initialQuery` on mount), which matters
+     only when the panel is ALREADY open - SlideOver unmounts its children on
+     close, so a normal open is a fresh island either way. Cleared on close,
+     so the human's own next "Add icons" click opens the resting panel it
+     always did. */
+  const [addSeed, setAddSeed] = useState({ query: "", nonce: 0 });
+
+  /* Set by `download_collection` only: the download panel starts zipping the
+     moment it mounts, instead of waiting for the button the human would
+     press. `downloadWaiter` is how that flow's result gets back to the
+     agent - the same "resolve with what the human can see" contract
+     SearchIsland.tsx's search waiters use. */
+  const [downloadAutoStart, setDownloadAutoStart] = useState(false);
+  const downloadWaiter = useRef<((result: CollectionDownloadResult) => void) | null>(null);
+
   /* Quick view, ENTRY 1: `quickViewOpen` (the SlideOver's `open`) and
      `quickViewItem` (which icon it shows) are deliberately TWO separate
      pieces of state, not one nullable item doubling as both. If closing
@@ -136,9 +203,30 @@ export default function CollectionWorkspace({
     strokeWidth: styleSettings.strokeWidth ?? undefined,
   };
 
-  async function handleRemove(item: CollectionIconItem) {
+  /* What is on screen right now, for the WebMCP handle below. A tool call
+     can arrive between renders, and an agent that read a stale item list
+     would describe tiles that are no longer there - so the handle reads this
+     ref, written from an effect (after the DOM), never a render closure. */
+  const latest = useRef({ items, styleSettings });
+  useEffect(() => {
+    latest.current = { items, styleSettings };
+  });
+
+  /** Returns whether the removal actually landed, so a caller that has to
+      report back - the WebMCP tool - can say what happened instead of
+      guessing from the UI state it cannot see. The grid's own Remove button
+      ignores the return value: for a human, the error line this already sets
+      IS the report. */
+  async function handleRemove(item: CollectionIconItem): Promise<{ ok: true } | { ok: false; error: string }> {
     setBusyId(item.iconId);
     setErrorId(null);
+
+    const fail = (message: string) => {
+      setErrorId(item.iconId);
+      setRemoveError(message);
+      setBusyId(null);
+      return { ok: false as const, error: message };
+    };
 
     try {
       const response = await fetch(`/api/collections/${collectionId}/icons`, {
@@ -149,18 +237,14 @@ export default function CollectionWorkspace({
 
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as { error?: string } | null;
-        setErrorId(item.iconId);
-        setRemoveError(data?.error ?? "Could not remove. Try again.");
-        setBusyId(null);
-        return;
+        return fail(data?.error ?? "Could not remove. Try again.");
       }
 
       setItems((prev) => prev.filter((i) => i.iconId !== item.iconId));
       setBusyId(null);
+      return { ok: true };
     } catch {
-      setErrorId(item.iconId);
-      setRemoveError("Could not remove. Try again.");
-      setBusyId(null);
+      return fail("Could not remove. Try again.");
     }
   }
 
@@ -192,12 +276,11 @@ export default function CollectionWorkspace({
                 width: hit.width,
                 height: hit.height,
                 tier: hit.tier,
-                /* The degraded case CollectionIconLicense's own comment
-                   describes: SearchHit has no author name/url (the search
-                   index does not carry those), so a LICENSES.txt line for an
-                   icon added this session, before the next reload, is
-                   shorter than one the server rendered - still true, never
-                   fabricated. */
+                /* What SearchHit alone can say: no author name/url, since
+                   the search index does not carry those. The fetch below
+                   replaces this with the full license the server has, so the
+                   shortfall lasts one round trip rather than until the next
+                   reload - never fabricated either way. */
                 license: {
                   setName: hit.setName,
                   authorName: null,
@@ -211,22 +294,30 @@ export default function CollectionWorkspace({
             ],
       );
 
-      /* Close the body gap: resolve this
-         icon's real body once, client-side, the same JSON endpoint
-         IconQuickView.tsx's fetch-on-open uses - so an icon added this
-         session ends up carrying its body exactly like a page-load icon
-         does (/collections/[id].astro's own getIcon() resolve), regardless
-         of when it was added. Fire-and-forget: on failure the tile just
-         keeps rendering through StyledIconGlyph's (now correctly styled)
-         fallback img, same honest degrade as before this existed. */
+      /* Close the body and license gaps: resolve this icon's real body and
+         its set's full license line once, client-side, from the same JSON
+         endpoint IconQuickView.tsx's fetch-on-open uses - so an icon added
+         this session ends up carrying exactly what a page-load icon carries
+         (/collections/[id].astro's own getIcon()+getSet() resolve),
+         regardless of when it was added. Fire-and-forget: on failure the
+         tile just keeps rendering through StyledIconGlyph's (now correctly
+         styled) fallback img with the shorter license above, same honest
+         degrade as before this existed. */
       fetch(`/api/icon/${hit.prefix}/${hit.name}.json`)
         .then((response) => (response.ok ? response.json() : null))
-        .then((data: { body: string; width: number; height: number; tier: Tier | null } | null) => {
+        .then((data: IconDetailDTO | null) => {
           if (!data) return;
           setItems((prev) =>
             prev.map((item) =>
               item.iconId === iconId
-                ? { ...item, body: data.body, width: data.width, height: data.height, tier: data.tier ?? item.tier }
+                ? {
+                    ...item,
+                    body: data.body,
+                    width: data.width,
+                    height: data.height,
+                    tier: data.tier ?? item.tier,
+                    license: data.license ?? item.license,
+                  }
                 : item,
             ),
           );
@@ -236,6 +327,192 @@ export default function CollectionWorkspace({
       setItems((prev) => prev.filter((item) => item.iconId !== iconId));
     }
   }
+
+  /* --------------------------------------------------------------------
+     WebMCP - the same four actions, driven by an agent instead of a cursor.
+
+     Every function below goes through the endpoints the buttons above go
+     through, in the same order, and updates the same `items`/`styleSettings`
+     state the grid renders from. That is the whole point: the human watching
+     this page sees the agent's work as tiles landing, a grid re-rendering in
+     new colors, a panel sliding open - not as a summary it has to take on
+     trust. They can veto anything with the controls already in front of
+     them.
+     -------------------------------------------------------------------- */
+
+  /** Set name for an icon whose tile has not resolved a license yet - the
+      page already has the whole set list for the Add-icons panel's facet
+      rail, so no request is needed to name a set. */
+  const setNameFor = useCallback(
+    (prefix: string) => setLabels.find((label) => label.prefix === prefix)?.name ?? prefix,
+    [setLabels],
+  );
+
+  const addIconById = useCallback(
+    async (prefix: string, name: string) => {
+      const iconId = `${prefix}:${name}`;
+      const existing = latest.current.items.find((item) => item.iconId === iconId);
+      if (existing) {
+        /* Idempotent, exactly like the API underneath: already saved is a
+           calm success, not an error and not a second tile. */
+        return {
+          added: false,
+          count: latest.current.items.length,
+          set: existing.license?.setName ?? setNameFor(prefix),
+        };
+      }
+
+      /* Resolve the icon BEFORE saving it: an agent types identifiers from
+         memory far more often than a human clicks a wrong star, and "there
+         is no such icon" is a much more useful answer than a collection row
+         pointing at nothing. This is also the request that gives the tile
+         its body and license, so it is not an extra round trip. */
+      const detailResponse = await fetch(`/api/icon/${prefix}/${name}.json`);
+      if (!detailResponse.ok) {
+        throw new Error(
+          `There is no icon called ${iconId} in the library. Check the set prefix and the icon name - search_icons on the library page returns exact ones.`,
+        );
+      }
+      const detail = (await detailResponse.json()) as IconDetailDTO;
+
+      const response = await fetch(`/api/collections/${collectionId}/icons`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ icon: iconId }),
+      });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error ?? `Could not add ${iconId}. Try again.`);
+      }
+
+      setItems((prev) =>
+        prev.some((item) => item.iconId === iconId)
+          ? prev
+          : [
+              ...prev,
+              {
+                iconId,
+                prefix,
+                name,
+                body: detail.body,
+                width: detail.width,
+                height: detail.height,
+                tier: detail.tier,
+                license: detail.license,
+              },
+            ],
+      );
+
+      return {
+        added: true,
+        count: latest.current.items.length + 1,
+        set: detail.license?.setName ?? setNameFor(prefix),
+      };
+    },
+    [collectionId, setNameFor],
+  );
+
+  const applyStyles = useCallback(
+    async (request: CollectionStyleRequest) => {
+      const current = latest.current.styleSettings;
+      const anchorIconId =
+        request.anchorIcon === undefined
+          ? current.anchorIconId
+          : request.anchorIcon
+            ? `${request.anchorIcon.prefix}:${request.anchorIcon.name}`
+            : null;
+
+      /* A full-replace PUT (that route's own comment), so every field is
+         sent every time - the collection's current value for anything the
+         agent did not mention. Same helper the Save styles button uses. */
+      const result = await saveCollectionStyles(collectionId, {
+        anchorIconId,
+        color: request.color === undefined ? current.color : request.color,
+        strokeWidth:
+          request.strokeWidth === undefined ? current.strokeWidth : request.strokeWidth,
+        size: request.size === undefined ? current.size : request.size,
+        exportFormat: request.exportFormat ?? current.exportFormat,
+      });
+      if (!result.ok) throw new Error(result.error);
+
+      setStyleSettings(result.settings);
+      return toStyleReport(result.settings);
+    },
+    [collectionId],
+  );
+
+  const webmcpHandle = useMemo<CollectionToolHandle>(() => {
+    const readSnapshot = (): CollectionSnapshot => {
+      const state = latest.current;
+      return {
+        id: collectionId,
+        name: collectionName,
+        count: state.items.length,
+        icons: state.items.map((item) => ({
+          name: item.name,
+          set: item.license?.setName ?? setNameFor(item.prefix),
+          prefix: item.prefix,
+        })),
+        styles: toStyleReport(state.styleSettings),
+      };
+    };
+
+    return {
+      snapshot: readSnapshot,
+      addIcon: ({ prefix, name }) => addIconById(prefix, name),
+      async removeIcon({ prefix, name }) {
+        const iconId = `${prefix}:${name}`;
+        const item = latest.current.items.find((candidate) => candidate.iconId === iconId);
+        /* The tool checks membership first and refuses with the member list,
+           so reaching this is a race (the human removed the same tile a
+           moment earlier), not a bad call - answer with the count either
+           way rather than inventing a failure. */
+        if (!item) return { count: latest.current.items.length };
+        const result = await handleRemove(item);
+        if (!result.ok) throw new Error(result.error);
+        return { count: latest.current.items.length - 1 };
+      },
+      setStyles: applyStyles,
+      openAddPanel(query) {
+        if (query !== null) setAddSeed((prev) => ({ query, nonce: prev.nonce + 1 }));
+        setAddOpen(true);
+      },
+      async download(format) {
+        if (format && format !== latest.current.styleSettings.exportFormat) {
+          /* Persist the format the same way the download panel does when a
+             visitor picks a different one, so the panel opens preselected on
+             it and the collection remembers it afterwards. */
+          await applyStyles({ exportFormat: format });
+        }
+
+        const settled = new Promise<CollectionDownloadResult>((resolve) => {
+          downloadWaiter.current = resolve;
+          window.setTimeout(() => {
+            if (!downloadWaiter.current) return;
+            downloadWaiter.current = null;
+            resolve({
+              ok: false,
+              count: latest.current.items.length,
+              format: latest.current.styleSettings.exportFormat,
+              error:
+                "The download panel is still working through the icons on the person's screen - it did not finish in time for me to confirm it.",
+            });
+          }, DOWNLOAD_TIMEOUT_MS);
+        });
+
+        setDownloadAutoStart(true);
+        setDownloadOpen(true);
+        return settled;
+      },
+    };
+    /* handleRemove is a plain function redefined each render and is
+       deliberately NOT a dependency: it closes over nothing that changes
+       (collectionId and the state setters are stable), and listing it would
+       rebuild the handle - and so re-register every tool - on every
+       render. */
+  }, [addIconById, applyStyles, collectionId, collectionName, setNameFor]);
+
+  useEffect(() => registerWebMcpTools(createCollectionTools(webmcpHandle)), [webmcpHandle]);
 
   return (
     <div className="mt-8">
@@ -290,12 +567,19 @@ export default function CollectionWorkspace({
 
       <SlideOver
         open={addOpen}
-        onClose={() => setAddOpen(false)}
+        onClose={() => {
+          setAddOpen(false);
+          /* Drop any query an agent seeded, so the human's own next "Add
+             icons" click opens the resting panel, exactly as before. */
+          if (addSeed.query) setAddSeed((prev) => ({ query: "", nonce: prev.nonce + 1 }));
+        }}
         title="Add icons"
         widthClassName="w-[90%]"
       >
         <div className="p-6">
           <SearchIsland
+            key={addSeed.nonce}
+            initialQuery={addSeed.query}
             syncUrl={false}
             setLabels={setLabels}
             categoryLabels={categoryLabels}
@@ -329,7 +613,10 @@ export default function CollectionWorkspace({
 
       <SlideOver
         open={downloadOpen}
-        onClose={() => setDownloadOpen(false)}
+        onClose={() => {
+          setDownloadOpen(false);
+          setDownloadAutoStart(false);
+        }}
         title="Download collection"
         widthClassName="w-full sm:max-w-[480px]"
       >
@@ -342,6 +629,12 @@ export default function CollectionWorkspace({
           onFormatSaved={(exportFormat) =>
             setStyleSettings((prev) => ({ ...prev, exportFormat }))
           }
+          autoStart={downloadAutoStart}
+          onAutoStartSettled={(result) => {
+            const waiter = downloadWaiter.current;
+            downloadWaiter.current = null;
+            waiter?.(result);
+          }}
         />
       </SlideOver>
 

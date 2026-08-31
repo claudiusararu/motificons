@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { strToU8, zipSync } from "fflate";
 import type { IconEdits } from "../../lib/transforms/svg-doc";
 import { buildExportUrl } from "../../lib/transforms/export-url";
+import { saveCollectionStyles } from "../../lib/collection-style-save";
 import { EXPORT_FORMATS, type ExportFormat } from "../../lib/transforms/formats";
 import {
   buildLicensesText,
@@ -30,6 +31,16 @@ const BATCH_SIZE = 4;
 const DEFAULT_PNG_SIZE = 512;
 
 type DownloadStatus = "idle" | "running" | "error" | "done";
+
+/** What an auto-started run reports back to whoever asked for it - today
+    only CollectionWorkspace.tsx's WebMCP `download_collection` tool. */
+export interface AutoDownloadResult {
+  ok: boolean;
+  count: number;
+  format: ExportFormat;
+  /** The panel's own error sentence, when the run failed. */
+  error?: string;
+}
 
 type FetchResult =
   | { ok: true; filename: string; bytes: Uint8Array }
@@ -61,6 +72,8 @@ export default function CollectionDownloadPanel({
   styleSettings,
   savedEdits,
   onFormatSaved,
+  autoStart = false,
+  onAutoStartSettled,
 }: {
   collectionId: string;
   collectionName: string;
@@ -71,6 +84,14 @@ export default function CollectionDownloadPanel({
       what was just looked at. */
   savedEdits: IconEdits;
   onFormatSaved: (format: ExportFormat) => void;
+  /** Start zipping the moment this panel mounts, instead of waiting for the
+      button. Set only when a WebMCP agent called `download_collection` on
+      the human's behalf: the panel still opens, still counts the icons off
+      in front of them and still hands the file to their browser - the only
+      thing skipped is the click they already delegated. */
+  autoStart?: boolean;
+  /** How an auto-started run reports back. Called exactly once per run. */
+  onAutoStartSettled?: (result: AutoDownloadResult) => void;
 }) {
   const [format, setFormat] = useState<ExportFormat>(styleSettings.exportFormat);
   const [pngSize, setPngSize] = useState<number>(styleSettings.size ?? DEFAULT_PNG_SIZE);
@@ -90,26 +111,14 @@ export default function CollectionDownloadPanel({
        a download error - the remembered default staying one save behind is
        a much smaller problem than "your download failed" for a settings
        write that was not what they clicked the button for. */
-    try {
-      const response = await fetch(`/api/collections/${collectionId}/style`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          anchorIconId: styleSettings.anchorIconId,
-          color: styleSettings.color,
-          strokeWidth: styleSettings.strokeWidth,
-          size: styleSettings.size,
-          exportFormat: nextFormat,
-        }),
-      });
-      if (!response.ok) return;
-      const data = (await response.json().catch(() => null)) as
-        | { settings?: { exportFormat?: ExportFormat } }
-        | null;
-      if (data?.settings?.exportFormat) onFormatSaved(data.settings.exportFormat);
-    } catch {
-      /* Swallowed - see comment above. */
-    }
+    const result = await saveCollectionStyles(collectionId, {
+      anchorIconId: styleSettings.anchorIconId,
+      color: styleSettings.color,
+      strokeWidth: styleSettings.strokeWidth,
+      size: styleSettings.size,
+      exportFormat: nextFormat,
+    });
+    if (result.ok) onFormatSaved(result.settings.exportFormat);
   }
 
   async function fetchIconFile(item: CollectionIconItem): Promise<FetchResult> {
@@ -133,8 +142,21 @@ export default function CollectionDownloadPanel({
     return { ok: true, filename, bytes: new Uint8Array(buffer) };
   }
 
-  async function handleDownload() {
-    if (items.length === 0 || status === "running") return;
+  /** Returns what happened, so an auto-started run can be reported back;
+      the button ignores it, because for a person the panel's own status line
+      IS the report. */
+  async function handleDownload(): Promise<AutoDownloadResult> {
+    if (items.length === 0 || status === "running") {
+      return {
+        ok: false,
+        count: items.length,
+        format,
+        error:
+          items.length === 0
+            ? "There is nothing in this collection to download."
+            : "A download is already running in this panel.",
+      };
+    }
 
     setStatus("running");
     setErrorMessage("");
@@ -180,13 +202,33 @@ export default function CollectionDownloadPanel({
       URL.revokeObjectURL(url);
 
       setStatus("done");
+      return { ok: true, count: items.length, format };
     } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "Could not download all icons. Try again.";
       setStatus("error");
-      setErrorMessage(
-        error instanceof Error && error.message ? error.message : "Could not download all icons. Try again.",
-      );
+      setErrorMessage(message);
+      return { ok: false, count: items.length, format, error: message };
     }
   }
+
+  /* The auto-start run, for a WebMCP `download_collection` call. Guarded by
+     a ref rather than by `status`: this must fire exactly once per mounted
+     panel, and the panel is mounted fresh each time the slide-over opens
+     (SlideOver.tsx unmounts its children on close), so "once per mount" is
+     exactly the right granularity. */
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!autoStart || autoStarted.current) return;
+    autoStarted.current = true;
+    void handleDownload().then((result) => onAutoStartSettled?.(result));
+    /* Deliberately keyed on `autoStart` alone: handleDownload closes over
+       this render's items/format, which are the ones the human is looking
+       at, and re-running on every render is exactly what must not happen. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
 
   return (
     <div className="flex flex-col gap-8 px-6 py-6">

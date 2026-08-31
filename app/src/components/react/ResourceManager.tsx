@@ -1,5 +1,11 @@
-import { useRef, useState, type MouseEvent, type SyntheticEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type SyntheticEvent } from "react";
 import { MAX_NAME_LENGTH } from "../../lib/workspace/limits";
+import { registerWebMcpTools } from "../../lib/webmcp/bridge";
+import {
+  createDashboardTools,
+  type DashboardCollectionSummary,
+  type DashboardToolHandle,
+} from "../../lib/webmcp/dashboard-tools";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 export interface ResourceItem {
@@ -213,6 +219,67 @@ export default function ResourceManager({
     setFormError("");
   }
 
+  /**
+   * The one create path: the inline form below and the WebMCP
+   * `create_collection` tool both come through here, so an agent creating a
+   * collection sends the same POST, hits the same five-slot cap, and puts
+   * the same row on screen as the person's own New collection button. When
+   * the account is full it also raises the same capacity notice they would
+   * have seen - the refusal is never something only the agent knows about.
+   */
+  async function createResource(
+    name: string,
+  ): Promise<{ ok: true; item: ResourceItem } | { ok: false; error: string; limited?: true }> {
+    let response: Response;
+    try {
+      response = await fetch(apiBase, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+    } catch {
+      return { ok: false, error: "Something went wrong. Try again." };
+    }
+
+    const payload = (await response.json().catch(() => null)) as
+      | { error?: string; limited?: true; upsell?: UpsellCopy }
+      | Record<ResourceKind, ResourceItem>
+      | null;
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: (payload as { error?: string } | null)?.error ?? "Something went wrong. Try again.",
+      };
+    }
+
+    if (payload && "limited" in payload && payload.limited) {
+      const copy = payload.upsell ?? null;
+      setUpsell(copy);
+      return {
+        ok: false,
+        limited: true,
+        /* The page's own two lines, concatenated exactly as limits.ts
+           documents them - whoever asked hears what the person is reading. */
+        error: copy ? `${copy.headline} ${copy.body}` : "This account is full.",
+      };
+    }
+
+    const created = (payload as Record<ResourceKind, ResourceItem> | null)?.[kind];
+    if (!created) return { ok: false, error: "Something went wrong. Try again." };
+
+    const item: ResourceItem = {
+      id: created.id,
+      name: created.name,
+      href: detailHrefBase ? `${detailHrefBase}/${created.id}` : undefined,
+      /* A freshly created collection always starts empty - no need to
+         ask the server for a count it already knows is zero. */
+      count: kind === "collection" ? 0 : undefined,
+    };
+    setItems((prev) => [...prev, item]);
+    return { ok: true, item };
+  }
+
   async function submitCreate(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = formValue.trim();
@@ -225,53 +292,68 @@ export default function ResourceManager({
     setFormStatus("loading");
     setFormError("");
 
-    try {
-      const response = await fetch(apiBase, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
-      });
-      const payload = (await response.json().catch(() => null)) as
-        | { error?: string; limited?: true; upsell?: UpsellCopy }
-        | Record<ResourceKind, ResourceItem>
-        | null;
-
-      if (!response.ok) {
-        setFormStatus("error");
-        setFormError((payload as { error?: string } | null)?.error ?? "Something went wrong. Try again.");
-        return;
-      }
-
-      if (payload && "limited" in payload && payload.limited) {
-        setUpsell(payload.upsell ?? null);
-        closeCreateForm();
-        return;
-      }
-
-      const created = (payload as Record<ResourceKind, ResourceItem> | null)?.[kind];
-      if (!created) {
-        setFormStatus("error");
-        setFormError("Something went wrong. Try again.");
-        return;
-      }
-
-      setItems((prev) => [
-        ...prev,
-        {
-          id: created.id,
-          name: created.name,
-          href: detailHrefBase ? `${detailHrefBase}/${created.id}` : undefined,
-          /* A freshly created collection always starts empty - no need to
-             ask the server for a count it already knows is zero. */
-          count: kind === "collection" ? 0 : undefined,
-        },
-      ]);
+    const result = await createResource(trimmed);
+    if (result.ok || result.limited) {
+      /* Over the cap, the capacity notice REPLACES this form (createResource
+         has already set it), so closing it is the whole response - an error
+         line under a form nobody can see would be the dead end. */
       closeCreateForm();
-    } catch {
-      setFormStatus("error");
-      setFormError("Something went wrong. Try again.");
+      return;
     }
+
+    setFormStatus("error");
+    setFormError(result.error);
   }
+
+  /* --------------------------------------------------------------------
+     WebMCP - reading and creating the person's own collections.
+
+     Same shape as SearchIsland.tsx's registration: a ref holding what is on
+     screen right now (a tool call can arrive between renders), a handle
+     built once, and one effect that registers on mount and drops the tools
+     on unmount. `list` and `create` are the only two: renaming and deleting
+     stay the person's own, in the rows in front of them - there is nothing
+     an agent could not do by asking, and a deletion is not something to hand
+     to a caller who cannot see the icons inside.
+     -------------------------------------------------------------------- */
+  const latestItems = useRef(items);
+  useEffect(() => {
+    latestItems.current = items;
+  });
+
+  const toSummary = useCallback(
+    (item: ResourceItem): DashboardCollectionSummary => ({
+      id: item.id,
+      name: item.name,
+      count: item.count ?? 0,
+      url: item.href ?? (detailHrefBase ? `${detailHrefBase}/${item.id}` : ""),
+    }),
+    [detailHrefBase],
+  );
+
+  const webmcpHandle = useMemo<DashboardToolHandle>(
+    () => ({
+      list: () => latestItems.current.map(toSummary),
+      async create(name) {
+        const result = await createResource(name);
+        if (!result.ok) return { ok: false, error: result.error };
+        return { ok: true, collection: toSummary(result.item) };
+      },
+    }),
+    /* createResource is redefined every render and closes only over stable
+       values (apiBase, kind, detailHrefBase and the state setters); listing
+       it would rebuild the handle and re-register the tools on every render.
+       eslint-disable-next-line react-hooks/exhaustive-deps */
+    [toSummary],
+  );
+
+  useEffect(() => {
+    /* Collections are the only resource kind that exists, and the tool
+       descriptions say "collection" in plain words - so a future kind gets
+       its own tools rather than silently inheriting these. */
+    if (kind !== "collection") return;
+    return registerWebMcpTools(createDashboardTools(webmcpHandle));
+  }, [kind, webmcpHandle]);
 
   function startEdit(item: ResourceItem) {
     setConfirmingId(null);
