@@ -1,0 +1,103 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Button from "../components/Button.astro";
+import Card from "../components/Card.astro";
+import Icon from "../components/Icon.astro";
+import Pill from "../components/Pill.astro";
+import { siteStats } from "../lib/site";
+
+const stats = await siteStats();
+---
+
+<Layout
+  title="Icons for coding agents - MCP server | Motificons"
+  description={`Give Claude Code, Codex and Cursor ${stats.icons} icons over MCP: searched by intent, filtered to your collection's style, delivered as SVG, JSX or SwiftUI.`}
+>
+  <Header active="agents" />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <h1 class="pt-14 text-h2 font-bold sm:text-hero">
+        Stop letting your agent guess icons.
+      </h1>
+      <p class="mt-5 text-ink-muted">
+        Motificons gives Claude Code, Codex and Cursor {stats.icons}+ icons over
+        MCP - searched by intent, filtered to your collection's style, delivered as
+        production-ready SVG, JSX or SwiftUI.
+      </p>
+
+      {/* Status strip: MCP server shipped at launch (2026-08-10). */}
+      <div class="mt-8 rounded-card bg-banner px-6 py-4 text-ink">
+        <p>
+          <strong class="font-bold">Live now.</strong>
+          {" "}The MCP server is free with an account. Create your API key in
+          the dashboard and connect your agent in one minute.
+        </p>
+      </div>
+
+      <section class="mt-16">
+        <h2 class="text-h2 font-semibold">What it does</h2>
+        <div class="mt-8 grid gap-6 md:grid-cols-3">
+          <Card variant="blue">
+            <Icon name="search" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">Search by intent</h3>
+            <p class="mt-2 text-meta">
+              Your agent asks for "something for archived items" and gets
+              candidates that actually read that way, not fifty near-duplicates
+              of a box.
+            </p>
+          </Card>
+
+          <Card variant="teal">
+            <Icon name="grid" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">
+              Your collections are the source of truth
+            </h3>
+            <p class="mt-2 text-meta">
+              You curate collections visually here; the agent consumes them
+              there, and can add what it picks back into the collection. Curated
+              by a human, consumed by a machine.
+            </p>
+          </Card>
+
+          <Card variant="grape">
+            <Icon name="check" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">Audit your repo</h3>
+            <p class="mt-2 text-meta">
+              Point it at your codebase and it reports mixed sets, orphan SVGs
+              and off-collection icons - checked against your curated system,
+              not generic heuristics.
+            </p>
+          </Card>
+        </div>
+      </section>
+
+      <section class="mt-16">
+        <h2 class="text-h2 font-semibold">Setup</h2>
+        <p class="mt-3 text-ink-muted">
+          A few lines in your agent's MCP config, using the API key that comes
+          with your free account. Create it from your dashboard's "Coding agents (MCP)"
+          section, which also has ready-made, copy-paste configs for Claude
+          Code, Cursor and Codex with your key already filled in.
+        </p>
+      </section>
+
+      <section class="mt-16">
+        <h2 class="text-h2 font-semibold">Get started</h2>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <Button href="/dashboard">Connect your agent</Button>
+          <Button variant="secondary" href="/register">Create a free account</Button>
+        </div>
+        <div class="mt-6 flex flex-wrap gap-2">
+          <Pill variant="yellow">Free with an account</Pill>
+          <Pill variant="teal">No usage limit</Pill>
+          <Pill variant="gray">No card needed</Pill>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

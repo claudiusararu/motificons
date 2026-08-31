@@ -1,0 +1,85 @@
+# Motificons
+# Everything worth indexing is open. The only closed doors are the machine
+# endpoints and the internal design reference.
+
+User-agent: *
+Allow: /
+
+# /search is the library landing page (moved from /sets, 2026-08-08): the set
+# grid is server-rendered there, so it is the most valuable page on the site
+# after the homepage and is deliberately open. Query and filter variants all
+# canonicalise back to the clean URL, so crawling them wastes nothing.
+
+# Machine endpoints. Export and icon URLs referenced from image sitemaps are
+# allowed explicitly below so previews can still be fetched.
+Disallow: /api/
+Allow: /api/export/
+Allow: /api/icon/
+
+# Internal design reference, not product.
+Disallow: /styleguide
+
+# AI crawler access is intentional policy, not an oversight: these agents are
+# how Motificons gets cited by answer engines (see llms.txt), so they get
+# their own explicit stanzas rather than being left to fall through to
+# User-agent: * - a crawler that matches its own named group ignores the
+# wildcard group entirely, so each one repeats the same carve-outs above
+# (machine endpoints stay proxied through /api/export/ and /api/icon/ only,
+# /styleguide stays closed) instead of silently losing them.
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Allow: /api/export/
+Allow: /api/icon/
+Disallow: /styleguide
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Allow: /api/export/
+Allow: /api/icon/
+Disallow: /styleguide
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /api/
+Allow: /api/export/
+Allow: /api/icon/
+Disallow: /styleguide
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /api/
+Allow: /api/export/
+Allow: /api/icon/
+Disallow: /styleguide
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Allow: /api/export/
+Allow: /api/icon/
+Disallow: /styleguide
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Allow: /api/export/
+Allow: /api/icon/
+Disallow: /styleguide
+
+User-agent: CCBot
+Allow: /
+Disallow: /api/
+Allow: /api/export/
+Allow: /api/icon/
+Disallow: /styleguide
+
+User-agent: Bytespider
+Allow: /
+Disallow: /api/
+Allow: /api/export/
+Allow: /api/icon/
+Disallow: /styleguide
+
+Sitemap: https://motificons.app/sitemap.xml

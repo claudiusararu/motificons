@@ -1,0 +1,22 @@
+---
+interface Props {
+  title: string;
+  spec?: string;
+  id: string;
+}
+
+const { title, spec, id } = Astro.props;
+---
+
+{/* Section is full-bleed; its content rides the shared container so every
+    heading lines up with the header row - the shared container rule
+    (AGENTS.md). */}
+<section id={id} class="scroll-mt-24">
+  <div class="page-container">
+    <div class="border-t-2 border-ink/10 pt-12">
+      <h2 class="text-h2 font-semibold">{title}</h2>
+      {spec && <p class="mt-2 max-w-[70ch] text-meta text-ink-muted">{spec}</p>}
+      <div class="mt-8"><slot /></div>
+    </div>
+  </div>
+</section>

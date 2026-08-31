@@ -1,0 +1,34 @@
+---
+import SetCard from "./SetCard.astro";
+import type { SetMetadata } from "../lib/data";
+
+interface Props {
+  sets: SetMetadata[];
+  class?: string;
+}
+
+const { sets, class: className } = Astro.props;
+---
+
+{/* The resting state of the library. Server-rendered on /search so crawlers
+    always get the full grid, and so the search island has
+    something real to hand back to when a query is cleared.
+
+    Column count tracks the grid's own rendered width via auto-fill/minmax
+    (same technique as tile-classes.ts's TILE_GRID_CLASS), not a viewport
+    breakpoint (the previous `md:grid-cols-2 lg:grid-cols-3` - viewport
+    breakpoints fire on the WINDOW's width, which is wrong the moment this
+    grid's actual container is narrower than the window, e.g. inside the
+    collection page's "Add icons" slide-over: a 1440px-wide window still
+    satisfies `lg:`, forcing 3 fixed-fraction columns into whatever the panel
+    left over after its facet rail, well under 3 cards' combined minimum
+    content width, so the row genuinely overflowed rather than just clipping
+    - a real bug, not a cosmetic one). 240px is a deliberate floor above
+    SetCard's own hard minimum (its 3-column glyph row alone needs 3*44px +
+    2*10px gap = 152px, plus 24px padding each side = 200px) so a column can
+    never be squeezed narrower than a card can actually render. */}
+<div
+  class:list={["grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-6", className]}
+>
+  {sets.map((set) => <SetCard set={set} />)}
+</div>

@@ -1,0 +1,280 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Button from "../../components/Button.astro";
+import Card from "../../components/Card.astro";
+import Pill from "../../components/Pill.astro";
+import IconTile from "../../components/IconTile.astro";
+import TileStars from "../../components/react/TileStars";
+import { getSet } from "../../lib/data";
+import { setIcons } from "../../lib/related";
+import { TIER_COPY } from "../../lib/tier-copy";
+import { breadcrumbSchema } from "../../lib/seo";
+
+/* SSR with a long shared cache, same reasoning as the detail pages: 239 sets
+   is fine to prerender, but they read from the same live index the icons do,
+   and splitting the two would mean two rendering stories for one shape of
+   page. Crawlable and unmetered either way. */
+export const prerender = false;
+
+const { prefix = "" } = Astro.params;
+const set = await getSet(prefix);
+if (!set) return await Astro.rewrite("/404");
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800",
+);
+
+const FIRST_PAGE = 120;
+const { hits } = await setIcons(prefix, FIRST_PAGE);
+const tierCopy = TIER_COPY[set.tier];
+const policy = set.license.policy;
+
+const count = set.icons.toLocaleString("en-US");
+const title = `${set.name} - ${count} free icons | Motificons`;
+const description = `${set.name} by ${set.author.name}: ${count} icons under ${policy.name}. ${policy.attributionRequired ? "Attribution required." : "No attribution required."} Export as SVG, PNG, JSX or SwiftUI.`;
+
+/* Same trail the visible breadcrumb nav below renders. */
+const breadcrumbs = breadcrumbSchema([
+  { name: "Icons", path: "/search" },
+  { name: set.name, path: `/${prefix}` },
+]);
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonicalPath={`/${prefix}`}
+>
+  <Header active="icons" />
+
+  <script type="application/ld+json" is:inline set:html={breadcrumbs} />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <nav aria-label="Breadcrumb" class="pt-8 text-meta text-ink-muted">
+        <a href="/search" class="prose-link">Icons</a>
+        <span aria-hidden="true"> / </span>
+        <span>{set.name}</span>
+      </nav>
+
+      <h1 class="mt-6 text-h1 font-bold">{set.name} Icons</h1>
+
+      <p class="mt-4 text-ink-muted">
+        {count} icons by {set.author.name}, released under {policy.name}.
+        {tierCopy.setSentence}
+        {
+          policy.attributionRequired
+            ? " Using them requires visible attribution."
+            : " No visible attribution is required."
+        }
+      </p>
+
+      <div class="mt-5 flex flex-wrap gap-2">
+        <Pill variant="yellow" data-tier={set.tier}>{tierCopy.label}</Pill>
+        <Pill variant="teal">{set.license.spdx || set.license.title}</Pill>
+        {set.category && <Pill variant="blue">{set.category}</Pill>}
+        {set.version && <Pill variant="gray">v{set.version}</Pill>}
+        {set.brand && <Pill variant="gray">Brand marks</Pill>}
+      </div>
+
+      <div class="mt-8 flex flex-wrap items-center gap-4">
+        <Button href={`/search?prefix=${encodeURIComponent(prefix)}`}>
+          Search in this set
+        </Button>
+        {
+          set.author.url && (
+            <Button variant="secondary" href={set.author.url} external>
+              Project home
+            </Button>
+          )
+        }
+        <a href="/register" class="text-meta font-semibold text-blue-deep underline underline-offset-2">
+          Save these into a collection - free account
+        </a>
+      </div>
+
+      <section class="mt-12">
+        <h2 class="sr-only">Icons in {set.name}</h2>
+        <div
+          id="icon-grid"
+          class="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-3"
+        >
+          {
+            hits.map((item) => (
+              <div class="group relative">
+                <IconTile name={item.name} href={`/${item.prefix}/${item.name}`}>
+                  {item.body ? (
+                    <svg
+                      width="30"
+                      height="30"
+                      viewBox={`0 0 ${item.width} ${item.height}`}
+                      aria-hidden="true"
+                      set:html={item.body}
+                    />
+                  ) : (
+                    <img
+                      src={`/api/icon/${item.prefix}/${item.name}.svg`}
+                      width="30"
+                      height="30"
+                      alt=""
+                      loading="lazy"
+                    />
+                  )}
+                </IconTile>
+                {/* Empty sibling placeholder, not a child of the tile's own
+                    `<a>` - TileStars.tsx portals the real, interactive
+                    quick-save star into it client-side. See that
+                    component's own doc comment for why a sibling. */}
+                <span data-star-slot={`${item.prefix}:${item.name}`} data-star-name={item.name} />
+              </div>
+            ))
+          }
+        </div>
+
+        <TileStars client:load gridSelector="#icon-grid" />
+
+        {
+          set.icons > FIRST_PAGE && (
+            <div class="mt-8 flex flex-col items-center gap-3">
+              <button
+                type="button"
+                id="load-more"
+                data-prefix={prefix}
+                data-offset={FIRST_PAGE}
+                data-total={set.icons}
+                class="press inline-flex items-center justify-center rounded-btn border-2 border-ink bg-surface px-6 py-[15px] text-body font-semibold text-ink"
+              >
+                Load more
+              </button>
+              <p class="text-meta text-ink-muted" id="load-status" role="status" aria-live="polite">
+                Showing {Math.min(FIRST_PAGE, set.icons)} of {count}
+              </p>
+            </div>
+          )
+        }
+      </section>
+
+      <Card variant="standard" class="mt-16">
+        <h2 class="text-h3 font-semibold">About this set</h2>
+        <dl class="mt-4 grid grid-cols-2 gap-4 text-meta">
+          <div>
+            <dt class="text-ink-muted">Icons</dt>
+            <dd class="font-bold">{count}</dd>
+          </div>
+          <div>
+            <dt class="text-ink-muted">Author</dt>
+            <dd class="font-bold">{set.author.name}</dd>
+          </div>
+          <div>
+            <dt class="text-ink-muted">License</dt>
+            <dd class="font-bold">{policy.name}</dd>
+          </div>
+          <div>
+            <dt class="text-ink-muted">Capability</dt>
+            <dd class="font-bold">{tierCopy.label}</dd>
+          </div>
+        </dl>
+        <p class="mt-4 text-meta text-ink-muted">{tierCopy.summary}</p>
+      </Card>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script>
+  /* Load-more goes through the search API scoped to this set. Browse is never
+     metered - only the search box is - so an empty query costs nothing.
+     Each appended tile carries the same relative-wrapper + checkerboard
+     glyph + star-slot placeholder the server-rendered ones above do
+     as the server-rendered tiles, then dispatches
+     "motificons:tiles-appended" so TileStars.tsx (mounted once on this page)
+     re-scans and portals a star into the new slots too. */
+  const button = document.querySelector<HTMLButtonElement>("#load-more");
+  const grid = document.querySelector<HTMLElement>("#icon-grid");
+  const status = document.querySelector<HTMLElement>("#load-status");
+
+  button?.addEventListener("click", async () => {
+    const prefix = button.dataset["prefix"]!;
+    const offset = Number(button.dataset["offset"]);
+    const total = Number(button.dataset["total"]);
+
+    button.disabled = true;
+    button.textContent = "Loading";
+
+    try {
+      const response = await fetch(
+        `/api/search?prefix=${encodeURIComponent(prefix)}&limit=60&offset=${offset}`,
+      );
+      const payload = await response.json();
+      if (payload.limited || !payload.hits) throw new Error("no results");
+
+      for (const hit of payload.hits) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "group relative";
+
+        const tile = document.createElement("a");
+        tile.href = `/${hit.prefix}/${hit.name}`;
+        tile.title = hit.name;
+        tile.setAttribute("aria-label", hit.name);
+        tile.className =
+          "press-lift relative flex min-w-[96px] flex-col items-center gap-3 rounded-card bg-surface px-3 py-5 text-center no-underline";
+
+        const glyph = document.createElement("span");
+        glyph.className = "flex h-8 items-center justify-center text-ink glyph-checker";
+        if (hit.body) {
+          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svg.setAttribute("width", "30");
+          svg.setAttribute("height", "30");
+          svg.setAttribute("viewBox", `0 0 ${hit.width} ${hit.height}`);
+          svg.setAttribute("aria-hidden", "true");
+          svg.innerHTML = hit.body;
+          glyph.appendChild(svg);
+        } else {
+          const img = document.createElement("img");
+          img.src = `/api/icon/${hit.prefix}/${hit.name}.svg`;
+          img.width = 30;
+          img.height = 30;
+          img.alt = "";
+          img.loading = "lazy";
+          glyph.appendChild(img);
+        }
+
+        const label = document.createElement("span");
+        label.className = "w-full truncate text-meta text-ink-muted";
+        label.textContent = hit.name;
+
+        tile.append(glyph, label);
+
+        const starSlot = document.createElement("span");
+        starSlot.dataset["starSlot"] = `${hit.prefix}:${hit.name}`;
+        starSlot.dataset["starName"] = hit.name;
+
+        wrapper.append(tile, starSlot);
+        grid?.appendChild(wrapper);
+      }
+
+      const shown = offset + payload.hits.length;
+      button.dataset["offset"] = String(shown);
+      if (status) {
+        status.textContent = `Showing ${shown.toLocaleString("en-US")} of ${total.toLocaleString("en-US")}`;
+      }
+
+      document.dispatchEvent(new CustomEvent("motificons:tiles-appended"));
+
+      if (shown >= total || payload.hits.length === 0) {
+        button.remove();
+      } else {
+        button.disabled = false;
+        button.textContent = "Load more";
+      }
+    } catch {
+      button.disabled = false;
+      button.textContent = "Load more";
+      if (status) status.textContent = "Could not load more icons. Try again.";
+    }
+  });
+</script>

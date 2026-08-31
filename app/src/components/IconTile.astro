@@ -1,0 +1,46 @@
+---
+import {
+  TILE_BADGE_CLASS,
+  TILE_CLASS,
+  TILE_GLYPH_CLASS,
+  TILE_NAME_CLASS,
+} from "../lib/tile-classes";
+
+interface Props {
+  /** Icon name, always visible: better UX and better SEO than hover-only. */
+  name: string;
+  href?: string;
+  class?: string;
+}
+
+const { name, href, class: className } = Astro.props;
+
+const Tag = href ? "a" : "div";
+const hasBadge = Astro.slots.has("badge");
+---
+
+{/* Icon grid tile: white, radius 12px, ~30px glyph centered, name
+    below in muted 14px, lifts 2px onto a 4px hard shadow on hover. The name
+    truncates in the small 96px tile with no other way to read the full
+    string - `title` gives a mouse-hover tooltip, `aria-label` makes the
+    untruncated name the tile's explicit accessible name rather than relying
+    on the (already-untruncated, but easy to second-guess) visible text
+    content. */}
+<Tag
+  {...href ? { href } : {}}
+  title={name}
+  aria-label={name}
+  class:list={[TILE_CLASS, className]}
+>
+  {
+    hasBadge && (
+      <span class={TILE_BADGE_CLASS}>
+        <slot name="badge" />
+      </span>
+    )
+  }
+  <span class={`${TILE_GLYPH_CLASS} glyph-checker`}>
+    <slot />
+  </span>
+  <span class={TILE_NAME_CLASS}>{name}</span>
+</Tag>

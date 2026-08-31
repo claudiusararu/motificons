@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 400" width="660" height="400">
+  <title>Motificons DMG background</title>
+  <!-- Finder window content is 660x400 with 128px icons centered at
+       (180,200) and (480,200) - make-dmg.sh positions them there. The arrow
+       must sit between the icon halves (244..416). Hex only, never OKLCH. -->
+  <rect x="0" y="0" width="660" height="400" fill="#F0F1F3"/>
+
+  <!-- Brand chip, top center: yellow rounded square + ink star, same star
+       path as the web favicon / app icon. -->
+  <rect x="298" y="34" width="64" height="64" rx="14" fill="#FFD43B"/>
+  <path d="M12 3.5 14.8 9.2 21 10.1l-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 10.1l6.2-.9z"
+        transform="translate(306 42) scale(2)"
+        fill="#183153" stroke="#183153" stroke-width="2.2" stroke-linejoin="round"/>
+
+  <!-- Drag arrow between the app icon and the Applications symlink. -->
+  <line x1="256" y1="205" x2="384" y2="205"
+        stroke="#183153" stroke-width="6" stroke-linecap="round"/>
+  <path d="M408 205 382 190.5 382 219.5 Z" fill="#183153"/>
+</svg>

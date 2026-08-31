@@ -1,0 +1,17 @@
+# xcodegen output - regenerate with `xcodegen generate`
+Motificons.xcodeproj/
+build/
+DerivedData/
+xcuserdata/
+*.xcresult
+
+# per-developer signing team override - see the comment above `include:` in
+# project.yml
+project-local.yml
+
+# packaged DMGs - regenerate with `desktop/scripts/make-dmg.sh`
+dist/
+
+# App icon PNG intermediates - regenerate with `swift AppIcon/render-appicon.swift`.
+# appicon.svg, render-appicon.swift and AppIcon.icns stay tracked.
+AppIcon/AppIcon.iconset/

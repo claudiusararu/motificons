@@ -1,0 +1,104 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Button from "../../components/Button.astro";
+import Card from "../../components/Card.astro";
+import Icon from "../../components/Icon.astro";
+import SvgTool from "../../components/react/SvgTool";
+import { TOOLS, toolBySlug } from "./_tool-data";
+import { siteStats } from "../../lib/site";
+import { breadcrumbSchema } from "../../lib/seo";
+
+/* Prerendered: three static pages, no data dependency. They are keyword
+   landing pages, so they should be as fast and as cacheable as possible. */
+export function getStaticPaths() {
+  return TOOLS.map((tool) => ({ params: { slug: tool.slug } }));
+}
+
+const { slug = "" } = Astro.params;
+const tool = toolBySlug(slug)!;
+const stats = await siteStats();
+const others = TOOLS.filter((item) => item.slug !== slug);
+
+/* Same trail the visible breadcrumb nav below renders. */
+const breadcrumbs = breadcrumbSchema([
+  { name: "Tools", path: "/tools" },
+  { name: tool.name, path: `/tools/${slug}` },
+]);
+---
+
+<Layout title={`${tool.title} | Motificons`} description={tool.description}>
+  <Header active="tools" />
+
+  <script type="application/ld+json" is:inline set:html={breadcrumbs} />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <nav aria-label="Breadcrumb" class="pt-8 text-meta text-ink-muted">
+        <a href="/tools" class="prose-link">Tools</a>
+        <span aria-hidden="true"> / </span>
+        <span>{tool.name}</span>
+      </nav>
+
+      <h1 class="mt-6 text-h1 font-bold">{tool.h1}</h1>
+      <p class="mt-4 text-ink-muted">{tool.lead}</p>
+
+      <div class="mt-10">
+        <SvgTool client:load kind={tool.kind} />
+      </div>
+
+      <section class="mt-16">
+        <h2 class="text-h2 font-semibold">How it works</h2>
+        <ul class="mt-6 flex flex-col gap-4">
+          {
+            tool.notes.map((note) => (
+              <li class="flex items-start gap-3 text-ink-muted">
+                <Icon
+                  name="check"
+                  size={18}
+                  strokeWidth={3}
+                  class="mt-1 shrink-0 text-teal-deep"
+                />
+                <span>{note}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section class="mt-16">
+        <h2 class="text-h2 font-semibold">Other free tools</h2>
+        <div class="mt-6 grid gap-6 sm:grid-cols-2">
+          {
+            others.map((item) => (
+              <Card variant="standard" href={`/tools/${item.slug}`}>
+                <h3 class="text-h3 font-semibold">{item.name}</h3>
+                <p class="mt-2 text-meta text-ink-muted">{item.description}</p>
+              </Card>
+            ))
+          }
+        </div>
+      </section>
+
+      {/* Closing card: what the library adds over one-at-a-time pasting. */}
+      <Card variant="inverted" class="mt-16">
+        <h2 class="text-h3 font-semibold">
+          Converting one icon at a time gets old
+        </h2>
+        <p class="mt-3 text-meta text-on-dark-muted">
+          Motificons has {stats.icons} open-source icons with this conversion
+          built into every icon page, plus batch export, a style engine that
+          normalizes a whole collection, and an MCP server so your coding agent
+          picks from your icons. All of it is free.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <Button href="/">Browse the library</Button>
+          <Button variant="secondary" href="/register">Create a free account</Button>
+        </div>
+      </Card>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

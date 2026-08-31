@@ -1,0 +1,212 @@
+---
+import Icon from "./Icon.astro";
+import Logo from "./Logo.astro";
+import AuthMenu, { type AuthMenuInitialState } from "./react/AuthMenu";
+
+export type NavKey = "icons" | "categories" | "tools" | "app" | "agents";
+
+interface Props {
+  active?: NavKey;
+  class?: string;
+  /** Per-user SSR pages only (dashboard.astro, collections/[id].astro) -
+      their own already-resolved `Astro.locals.user`, forwarded straight
+      through to both AuthMenu instances below so the server HTML and the
+      client's first paint agree from the start (AuthMenu.tsx's own doc
+      comment has the full reasoning). Every prerendered/edge-cached page
+      omits this - AuthMenu falls back to its own neutral-then-cache-guess
+      two-pass render there, since no single per-visitor answer can be
+      baked into a response shared by every visitor. */
+  authState?: AuthMenuInitialState;
+}
+
+const { active, class: className, authState } = Astro.props;
+
+const NAV: { key: NavKey; label: string; href: string }[] = [
+  { key: "icons", label: "Icons", href: "/search" },
+  { key: "categories", label: "Categories", href: "/categories" },
+  { key: "tools", label: "Tools", href: "/tools" },
+  { key: "app", label: "Mac app", href: "/app" },
+  { key: "agents", label: "Agents", href: "/agents" },
+];
+---
+
+{/* Slim persistent header: wordmark left, nav centre, search and
+    sign-in right. Below md the link row hides behind a hamburger; the panel
+    it opens repeats every nav item plus search and the account entry, so
+    nothing the desktop header offers is unreachable on a phone - it used to
+    just scroll sideways, which is not a real mobile pattern. */}
+<header class:list={["sticky top-0 z-40 w-full bg-surface", className]}>
+  <div class="page-container flex h-[72px] items-center gap-6">
+    <Logo />
+
+    <nav
+      aria-label="Main"
+      class="scroll-light -mx-2 hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto px-2 pt-3 md:flex"
+    >
+      {
+        NAV.map((item) => (
+          <a
+            href={item.href}
+            aria-current={active === item.key ? "page" : undefined}
+            class:list={[
+              "rounded-control px-3 py-2 text-body font-semibold whitespace-nowrap no-underline transition-colors duration-[120ms] ease-in hover:text-ink",
+              active === item.key ? "text-blue-deep" : "text-ink-muted",
+            ]}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    {/* ml-auto rather than a breakpoint-conditional class: harmless at md+
+        (the nav's flex-1 already fills the gap, so this has no visible
+        effect there - the desktop header stays pixel-identical) and it is
+        what keeps this group pinned right once the nav disappears below md. */}
+    <div class="ml-auto flex shrink-0 items-center gap-2">
+      {/* 44px below md (a mobile control; the 36px dense-row exception is
+          desktop-only), 40px from md on - the same box this
+          already rendered at before the hamburger existed. */}
+      <a
+        href="/search?focus=1"
+        aria-label="Search icons"
+        class="touch-target inline-flex size-11 items-center justify-center rounded-tag text-ink-muted transition-colors duration-[120ms] ease-in hover:bg-canvas hover:text-ink md:size-10"
+      >
+        <Icon name="search" size={20} />
+      </a>
+
+      {/* Desktop-only slot for the account island. The mobile panel below
+          renders its own <AuthMenu> instance rather than relocating this
+          one, so "desktop header unchanged at md+" holds exactly, and the
+          island's session state (better-auth's shared client-side store)
+          is what keeps both instances in agreement - nothing here re-derives
+          or duplicates that state. */}
+      <span class="hidden md:inline-flex">
+        <AuthMenu client:load initialState={authState} />
+      </span>
+
+      {/* size-11 (44px), not size-10: this is a mobile-only control
+          (md:hidden), so the desktop-dense-row 36px exception does not apply
+          to it at all - it needs the full 44px
+          unconditionally, not gated behind the touch-target class's
+          `@media (pointer: coarse)` check, which some emulation/measurement
+          tooling does not trip. */}
+      <button
+        type="button"
+        id="nav-toggle"
+        aria-expanded="false"
+        aria-controls="nav-panel"
+        aria-label="Open menu"
+        class="touch-target inline-flex size-11 items-center justify-center rounded-tag text-ink-muted transition-colors duration-[120ms] ease-in hover:bg-canvas hover:text-ink aria-expanded:bg-canvas aria-expanded:text-ink md:hidden"
+      >
+        {/* Both icons occupy the same grid cell always - toggling
+            `invisible` (not `hidden`/display) is what keeps exactly one
+            showing without it fighting the `inline-flex`/`grid` display
+            utility already on these elements, and without the button
+            changing size between states. */}
+        <span class="grid">
+          <span id="nav-toggle-icon-open" class="col-start-1 row-start-1 inline-flex">
+            <Icon name="menu" size={20} />
+          </span>
+          <span id="nav-toggle-icon-close" class="invisible col-start-1 row-start-1 inline-flex">
+            <Icon name="close" size={20} />
+          </span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  {/* Overlays the page rather than pushing it down (position:absolute; a
+      sticky ancestor is itself a containing block, so this needs no extra
+      `relative` on the header). hidden by default and md:hidden always -
+      the second one is the real guarantee: if the panel was left open on a
+      phone and the viewport grows past md (rotation, resizing a dev tools
+      pane), CSS forces it closed regardless of the JS-managed `hidden`
+      attribute, which is what "desktop unchanged at md+" has to mean in
+      practice, not just "usually true". */}
+  <div
+    id="nav-panel"
+    class="absolute inset-x-0 top-full border-b-2 border-ink bg-surface md:hidden"
+    hidden
+  >
+    <nav aria-label="Main" class="page-container flex flex-col gap-1 py-4">
+      {
+        NAV.map((item) => (
+          <a
+            href={item.href}
+            aria-current={active === item.key ? "page" : undefined}
+            class:list={[
+              "touch-target rounded-control px-3 py-3 text-body font-semibold no-underline transition-colors duration-[120ms] ease-in hover:bg-canvas",
+              active === item.key ? "text-blue-deep" : "text-ink",
+            ]}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="page-container flex flex-col gap-1 border-t border-ink/10 py-4">
+      <a
+        href="/search?focus=1"
+        class="touch-target flex items-center gap-3 rounded-control px-3 py-3 text-body font-semibold text-ink no-underline transition-colors duration-[120ms] ease-in hover:bg-canvas"
+      >
+        <Icon name="search" size={20} class="shrink-0 text-ink-muted" />
+        Search
+      </a>
+
+      <div class="px-3 py-2">
+        <AuthMenu client:load initialState={authState} />
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  const toggle = document.getElementById("nav-toggle");
+  const panel = document.getElementById("nav-panel");
+  const iconOpen = document.getElementById("nav-toggle-icon-open");
+  const iconClose = document.getElementById("nav-toggle-icon-close");
+
+  if (toggle instanceof HTMLButtonElement && panel) {
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+      panel.hidden = !open;
+      /* visibility, not display: both icons stay laid out (grid overlap in
+         the markup), so the button never resizes between states, and there
+         is no risk of `invisible` losing a specificity fight the way
+         `hidden` did against the `inline-flex` already on these spans. */
+      iconOpen?.classList.toggle("invisible", open);
+      iconClose?.classList.toggle("invisible", !open);
+    };
+
+    toggle.addEventListener("click", () => {
+      setOpen(toggle.getAttribute("aria-expanded") !== "true");
+    });
+
+    /* Escape closes and returns focus to the trigger.
+       Global rather than scoped to the panel so it works regardless of
+       which row inside currently has focus. */
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (toggle.getAttribute("aria-expanded") !== "true") return;
+      setOpen(false);
+      toggle.focus();
+    });
+
+    /* A real navigation happens on link click (each row is a plain <a
+       href>), which unmounts this page and its state along with it, so
+       there is nothing further to close explicitly there. Growing the
+       viewport past md is the one other way the open panel needs to stop
+       being "open" without a click, and md:hidden on the panel already
+       forces that visually; this keeps the button's own state in sync so a
+       later shrink back below md does not reopen a stale panel. */
+    const desktopQuery = window.matchMedia("(min-width: 768px)");
+    const syncToDesktop = (matches: boolean) => {
+      if (matches) setOpen(false);
+    };
+    syncToDesktop(desktopQuery.matches);
+    desktopQuery.addEventListener("change", (event) => syncToDesktop(event.matches));
+  }
+</script>

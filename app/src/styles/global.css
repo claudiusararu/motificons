@@ -1,0 +1,688 @@
+/*
+  Motificons design system - single source of tokens.
+  Every color, type, radius and shadow value the app uses comes from here. Do
+  not invent values inline; add a token to this file first.
+*/
+
+@import "tailwindcss";
+/* Self-hosted variable Nunito (no third-party CDN at runtime - AGENTS.md). */
+@import "@fontsource-variable/nunito";
+
+@theme static {
+  /* ---------------------------------------------------------------------
+     Colors
+     --------------------------------------------------------------------- */
+
+  /* Core (MEASURED) */
+  --color-ink: #183153;
+  --color-ink-muted: #616d8a;
+  --color-canvas: #f0f1f3;
+  --color-surface: #ffffff;
+  --color-primary: #ffd43b;
+  --color-card-shadow: #c3c6d1;
+  --color-ink-shadow-soft: #515e7b;
+
+  /* On dark sections. Muted nudged to #8E9CB8 (4.74:1 on ink, AA). */
+  --color-on-dark: #f0f1f3;
+  --color-on-dark-muted: #8e9cb8;
+  --color-ink-deep: #10233f;
+
+  /* Accents (Open Color level 3/4 over our navy) */
+  --color-danger: #c92a2a;
+  --color-blue: #74c0fc;
+  --color-blue-deep: #146ebe;
+  --color-teal: #63e6be;
+  --color-grape: #e599f7;
+  --color-violet: #b197fc;
+  --color-red: #ff8787;
+  --color-banner: #d0ebff;
+
+  /* Darker same-hue shadows for colored cards.
+     Rule derived from the one MEASURED pair: blue-3 #74c0fc -> #146ebe, which
+     is Open Color blue-8. So every colored surface takes its own hue at
+     Open Color level 8. */
+  --color-teal-deep: #099268;
+  --color-grape-deep: #9c36b5;
+  --color-violet-deep: #6741d9;
+  --color-red-deep: #e03131;
+  --color-primary-deep: #f08c00;
+
+  /* Neutral fills */
+  --color-pill-gray: #e9ebee;
+  --color-segment-active: #e1e4e8;
+
+  /* ---------------------------------------------------------------------
+     Typography
+     --------------------------------------------------------------------- */
+
+  --font-sans: "Nunito Variable", Nunito, "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --text-hero: 48px;
+  --text-hero--line-height: 54px;
+  --text-hero-dark: 40px;
+  --text-hero-dark--line-height: 46px;
+  --text-h1: 40px;
+  --text-h1--line-height: 46px;
+  --text-h2: 32px;
+  --text-h2--line-height: 38px;
+  --text-h3: 24px;
+  --text-h3--line-height: 30px;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-meta: 14px;
+  --text-meta--line-height: 20px;
+  --text-pill: 12px;
+  --text-pill--line-height: 16px;
+  --text-pill--letter-spacing: 0.03em;
+  --text-code: 16px;
+  --text-code--line-height: 26px;
+
+  /* ---------------------------------------------------------------------
+     Radii
+     --------------------------------------------------------------------- */
+
+  --radius-control: 8px;
+  --radius-btn: 12px;
+  --radius-card: 12px;
+  --radius-panel: 14px;
+  --radius-pill: 32px;
+  --radius-tag: 48px;
+
+  /* ---------------------------------------------------------------------
+     Hard shadows. Solid color, zero blur, zero spread.
+     --shadow-glow is the ONE soft shadow allowed in the system.
+     --------------------------------------------------------------------- */
+
+  --shadow-hard: 0 6px 0 0 #183153;
+  --shadow-hard-sm: 0 4px 0 0 #183153;
+  --shadow-card: 0 4px 0 0 #c3c6d1;
+  --shadow-card-ink: 0 4px 0 0 #515e7b;
+  --shadow-card-blue: 0 4px 0 0 #146ebe;
+  --shadow-card-teal: 0 4px 0 0 #099268;
+  --shadow-card-grape: 0 4px 0 0 #9c36b5;
+  --shadow-card-violet: 0 4px 0 0 #6741d9;
+  --shadow-card-red: 0 4px 0 0 #e03131;
+  --shadow-card-primary: 0 4px 0 0 #f08c00;
+  --shadow-chip: 0 2px 0 0 #183153;
+  --shadow-glow: 0 8px 24px rgba(255, 212, 59, 0.1);
+}
+
+@layer base {
+  :root {
+    /* Focus ring is blue-deep, and --primary on navy.
+       Navy surfaces flip it by carrying the .on-navy class. */
+    --focus-ring: var(--color-blue-deep);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    display: flex;
+    /* dvh, not vh: vh is the layout viewport, which on mobile Safari/Chrome
+       is taller than what is actually visible under the address bar, so a
+       vh-sized footer sits partway offscreen until the chrome collapses. */
+    min-height: 100dvh;
+    flex-direction: column;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Every page's <main> lands as a direct child of <body> (Layout.astro
+     slots Header/main/Footer straight in). Growing it, not the footer, is
+     what pins the footer to the viewport bottom on short pages while
+     leaving tall pages - where main already exceeds the viewport - visually
+     unchanged. */
+  body > main {
+    flex: 1 0 auto;
+  }
+
+  /* Tailwind's preflight sets buttons to cursor: default. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Focus is always an outline, never the press physics, so it stays
+     distinguishable from hover. Nothing sets outline: none without one. */
+  :focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-ink);
+  }
+}
+
+@layer components {
+  /* -----------------------------------------------------------------------
+     Press physics.
+     The trick: shadow depth + translateY always sum to the resting depth, so
+     the bottom edge of the shadow never moves. The control travels down into
+     it. ~120ms ease-in on transform / shadow / background.
+
+     Usage: `.press` on any element with a resting 6px shadow, `.press.press-sm`
+     for the 4px small-button scale, `.press-card` for cards, `.press-lift` for
+     tiles that rise instead. Override the shadow color with
+     `--press-shadow-color` (Tailwind: `[--press-shadow-color:var(--color-blue-deep)]`).
+     ----------------------------------------------------------------------- */
+
+  .press,
+  .press-card,
+  .press-lift {
+    transition-property: transform, box-shadow, background-color, border-color,
+      color;
+    transition-duration: 120ms;
+    transition-timing-function: ease-in;
+  }
+
+  .press {
+    --press-shadow-color: var(--color-ink);
+    box-shadow: 0 6px 0 0 var(--press-shadow-color);
+  }
+
+  /* Inert = disabled or busy: the resting shadow stays, the travel stops. */
+  .press:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"]):hover {
+    transform: translateY(2px);
+    box-shadow: 0 4px 0 0 var(--press-shadow-color);
+  }
+
+  .press:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"]):active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 0 var(--press-shadow-color);
+  }
+
+  /* Small controls rest at 4px, so the travel scales to 2px / 4px. */
+  .press.press-sm {
+    box-shadow: 0 4px 0 0 var(--press-shadow-color);
+  }
+
+  .press.press-sm:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"]):hover {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 var(--press-shadow-color);
+  }
+
+  .press.press-sm:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"]):active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 0 var(--press-shadow-color);
+  }
+
+  /* Clickable cards: rest 4px, translate down 2px on hover. */
+  .press-card {
+    --press-shadow-color: var(--color-card-shadow);
+    box-shadow: 0 4px 0 0 var(--press-shadow-color);
+  }
+
+  .press-card:hover {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 var(--press-shadow-color);
+  }
+
+  .press-card:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 0 var(--press-shadow-color);
+  }
+
+  /* Icon tiles rise on hover and grow the shadow instead. */
+  .press-lift {
+    --press-shadow-color: var(--color-card-shadow);
+    box-shadow: 0 0 0 0 var(--press-shadow-color);
+  }
+
+  .press-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 0 var(--press-shadow-color);
+  }
+
+  .press-lift:active {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 var(--press-shadow-color);
+  }
+
+  /* Search results grid only (SearchIsland.tsx) - a small extra scale on top
+     of the lift, so a hovered tile visibly grows instead of just rising.
+     Compound selector for specificity, not source order: this always wins
+     over the plain `.press-lift:hover` above regardless of where either rule
+     sits in the file. */
+  .press-lift.search-tile:hover {
+    transform: translateY(-2px) scale(1.03);
+  }
+
+  .press-lift.search-tile:active {
+    transform: translateY(0) scale(1);
+  }
+
+  /* The quick-save star on a search tile (SaveStar.tsx): hidden until the
+     tile is hovered or something inside it has focus, so it never crowds the
+     glyph/name for a visitor just browsing. Opacity, not `display`/
+     `visibility` - the button must stay in the tab order so keyboard focus
+     can reach and reveal it in the first place. */
+  .quick-save-star {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .group:hover .quick-save-star,
+  .group:focus-within .quick-save-star {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* THE CONTAINER RULE - see AGENTS.md.
+     One shared container for the header row, every section's content, banner
+     content and footer content. Nothing sits outside it. Backgrounds may be
+     full-bleed; their content aligns here. Never add horizontal padding or
+     margins to a row that carries this class - that is what breaks alignment.
+     Named page-container, not container, so it cannot collide with Tailwind's
+     own container utility in the utilities layer. */
+  .page-container {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  /* Navy surfaces flip the focus ring to yellow. Applied to
+     the code panel, the footer and inverted cards; it inherits to children. */
+  .on-navy {
+    --focus-ring: var(--color-primary);
+  }
+
+  /* Skip link: first focusable element on the page.
+     Clipped to a 1px box rather than translated off-screen - a translate has to
+     clear the element's own height AND its shadow, which is how the earlier
+     version left a navy sliver in the corner. Nothing here paints until focus:
+     no size, no padding, no shadow. No transition either, so reduced-motion
+     needs no special case. */
+  .skip-link {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 100;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    padding: 0;
+    border-radius: var(--radius-btn);
+    background-color: var(--color-ink);
+    color: var(--color-on-dark);
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  .skip-link:focus {
+    /* Dark chip on the light canvas, so the yellow ring reads better. */
+    --focus-ring: var(--color-primary);
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    padding: 12px 20px;
+  }
+
+  /* Grid-paper preview surface - the icon detail editor.
+     An SVG pattern rather than repeating-linear-gradient: the unslop guard
+     bans gradients, and while grid lines are not what that rule is aimed at,
+     a pattern says what it means. Hex only inside the SVG. */
+  .grid-paper {
+    background-color: var(--color-surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M8 0H0v8' fill='none' stroke='%23E9EBEE' stroke-width='1'/%3E%3C/svg%3E");
+    background-position: center;
+  }
+
+  /* Transparency checkerboard: a white icon on a white tile chip was
+     invisible. Applied to every tile's glyph chip so a
+     white (or near-white) glyph still reads against the alternating squares
+     instead of vanishing into a flat white background. Hex only inside the
+     gradient stops - the hex-only rule is about SVG stop-color specifically,
+     but the same "hex, not an OKLCH-backed variable" reasoning applies to
+     any repeating pattern meant to read the same regardless of theme. */
+  .glyph-checker {
+    background-image:
+      linear-gradient(45deg, #f4f5f7 25%, transparent 25%),
+      linear-gradient(-45deg, #f4f5f7 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #f4f5f7 75%),
+      linear-gradient(-45deg, transparent 75%, #f4f5f7 75%);
+    background-size: 12px 12px;
+    background-position:
+      0 0,
+      0 6px,
+      6px -6px,
+      -6px 0;
+    background-color: #ffffff;
+  }
+
+  /* Inline loader. Same spinner as the Button loading state.
+     Under reduced motion it is removed rather than frozen: a static ring next
+     to an input reads as an icon, not as waiting, and the skeletons plus the
+     aria-live count already carry the feedback. */
+  .inline-spinner {
+    animation: spin 700ms linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* FAQ accordion. The marker is removed in both spellings browsers use, and
+     the chevron carries the state instead - it presses down the way every
+     other control in the system does. */
+  .faq-item > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-item > summary::marker {
+    content: "";
+  }
+
+  .faq-chevron {
+    box-shadow: 0 2px 0 0 var(--color-ink);
+    transition:
+      transform 120ms ease-in,
+      box-shadow 120ms ease-in;
+  }
+
+  .faq-item > summary:hover .faq-chevron {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 0 var(--color-ink);
+  }
+
+  .faq-item[open] > summary .faq-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Set card. Open Color level-3 tint with its level-8
+     sibling as a resting hard shadow; the card lifts on hover while the
+     shadow stays put, which reads as picking it up rather than pressing it
+     down. Colours arrive as custom properties so one class serves all
+     twelve tints. */
+  .set-card {
+    box-shadow: 0 4px 0 0 var(--set-shadow);
+    transition-property: transform, box-shadow;
+    transition-duration: 120ms;
+    transition-timing-function: ease-in;
+  }
+
+  .set-card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* "Launched on" marquee (homepage, before the footer - see index.astro
+     section 7). Horizontal mask fades both edges; a max-content flex track
+     duplicated 4x and translated -25% loops seamlessly. Paused on hover;
+     under reduced motion it stops and becomes a plain horizontal scroll. */
+  .marquee {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 12%,
+      #000 88%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 12%,
+      #000 88%,
+      transparent 100%
+    );
+  }
+
+  .marquee__track {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll 40s linear infinite;
+    will-change: transform;
+  }
+
+  .marquee:hover .marquee__track {
+    animation-play-state: paused;
+  }
+
+  .marquee__set {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding-right: 40px;
+    margin: 0;
+  }
+
+  .marquee__set a {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .marquee__set img {
+    display: block;
+    height: 56px;
+    width: auto;
+  }
+
+  @keyframes marquee-scroll {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee__track {
+      animation: none;
+    }
+    .marquee {
+      overflow-x: auto;
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+  }
+
+  /* Logo mark. Four silhouettes crossfade in place inside the chip.
+     Opacity and scale only. Each layer runs the same
+     11.2s cycle offset by a negative delay, so exactly one is visible at a
+     time and the handover is a true 300ms crossfade. */
+  .logo-glyph {
+    opacity: 0;
+    animation: logo-glyph-cycle 11200ms linear infinite;
+  }
+
+  @keyframes logo-glyph-cycle {
+    0% {
+      opacity: 1;
+      scale: 1;
+    }
+    22.32% {
+      opacity: 1;
+      scale: 1;
+    }
+    25% {
+      opacity: 0;
+      scale: 0.92;
+    }
+    97.32% {
+      opacity: 0;
+      scale: 0.92;
+    }
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  /* Custom scrollbars. Default scrollbars are forbidden
+     inside styled surfaces. Thin 8px, full-radius thumb, transparent track,
+     and bottom padding so the thumb never sits on the content. Firefox gets
+     the standard properties, WebKit the pseudo-elements. */
+  .scroll-dark,
+  .scroll-light {
+    padding-bottom: 12px;
+    scrollbar-width: thin;
+  }
+
+  .scroll-dark::-webkit-scrollbar,
+  .scroll-light::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scroll-dark::-webkit-scrollbar-track,
+  .scroll-light::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-dark::-webkit-scrollbar-thumb,
+  .scroll-light::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+  }
+
+  .scroll-dark {
+    scrollbar-color: var(--color-ink-shadow-soft) transparent;
+  }
+
+  .scroll-dark::-webkit-scrollbar-thumb {
+    background: var(--color-ink-shadow-soft);
+  }
+
+  .scroll-dark:hover {
+    scrollbar-color: var(--color-on-dark-muted) transparent;
+  }
+
+  .scroll-dark::-webkit-scrollbar-thumb:hover {
+    background: var(--color-on-dark-muted);
+  }
+
+  .scroll-light {
+    scrollbar-color: var(--color-card-shadow) transparent;
+  }
+
+  .scroll-light::-webkit-scrollbar-thumb {
+    background: var(--color-card-shadow);
+  }
+
+  .scroll-light:hover {
+    scrollbar-color: var(--color-ink-muted) transparent;
+  }
+
+  .scroll-light::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-muted);
+  }
+
+  /* A .scroll-dark strip inside a modal/panel context (SlideOver.tsx's own
+     `role="dialog"` wrapper - currently FormatPreviewPanel.tsx's export-
+     format tab strip, whenever it renders inside IconQuickView.tsx rather
+     than the full icon detail page) sits directly above more content
+     (the Copy/Download button row) instead of a card's own bottom padding -
+     the base rule's 12px padding-bottom read as glued to that content
+     below. */
+  [role="dialog"] .scroll-dark {
+    padding-bottom: 2px;
+    margin-bottom: 14px;
+  }
+
+  /* Prose links. */
+  .prose-link {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    transition: color 120ms ease-in;
+  }
+
+  .prose-link:hover {
+    color: var(--color-blue-deep);
+  }
+
+}
+
+/* Touch targets (AGENTS.md). Icon-only controls grow to 44x44 on coarse
+   pointers; dense pill groups keep their visual size and grow the hit area
+   with a centered pseudo-element instead. */
+@media (pointer: coarse) {
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .touch-target-inset {
+    position: relative;
+  }
+
+  .touch-target-inset::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: 100%;
+    height: 100%;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Coarse pointers have no hover - the quick-save star must always be
+     visible there, or a touch visitor could never discover it exists. */
+  .quick-save-star {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Reduced motion: every transition and animation collapses to an instant
+   state change. Unlayered on purpose so it beats both utilities and
+   components. The button spinner resolves to a static ring under this rule. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .press:hover,
+  .press:active,
+  .press-card:hover,
+  .press-card:active,
+  .press-lift:hover,
+  .press-lift:active,
+  .press-lift.search-tile:hover,
+  .press-lift.search-tile:active,
+  .set-card:hover {
+    transform: none;
+  }
+
+  .faq-item > summary:hover .faq-chevron {
+    transform: none;
+  }
+
+  .inline-spinner {
+    display: none;
+  }
+
+  /* The blanket rule above would collapse every glyph layer onto its 100%
+     frame and stack all four. Show the star only. */
+  .logo-glyph {
+    animation: none !important;
+    opacity: 0;
+  }
+
+  .logo-glyph:first-child {
+    opacity: 1;
+    scale: 1;
+  }
+}

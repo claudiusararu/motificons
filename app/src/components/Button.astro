@@ -1,0 +1,148 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import Icon from "./Icon.astro";
+
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "blue"
+  | "teal"
+  | "ghost";
+export type ButtonSize = "default" | "sm";
+
+interface Props extends Omit<HTMLAttributes<"button">, "type"> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  /** Renders an <a> instead of a <button>. */
+  href?: string;
+  /** With `href`: saves the target instead of navigating to it. */
+  download?: boolean;
+  type?: "button" | "submit" | "reset";
+  /** Ghost nav buttons only: paints the item blue-deep. */
+  active?: boolean;
+  /**
+   * Busy state. Passing the prop at all (even false) reserves the spinner's
+   * width so the button never resizes when it flips.
+   */
+  loading?: boolean;
+  /** Opens in a new tab with a safe rel. */
+  external?: boolean;
+  fullWidth?: boolean;
+}
+
+const {
+  variant = "primary",
+  size = "default",
+  href,
+  type = "button",
+  active = false,
+  loading = false,
+  external = false,
+  fullWidth = false,
+  disabled = false,
+  class: className,
+  // Consumed by the parent for slot placement; must not reach the DOM.
+  slot,
+  ...rest
+} = Astro.props;
+
+/* Buttons. Fill only; geometry lives in the size map. */
+const FILLS: Record<ButtonVariant, string> = {
+  primary: "bg-primary text-ink border-2 border-ink press",
+  secondary: "bg-surface text-ink border-2 border-ink press",
+  blue: "bg-blue text-ink border-2 border-ink press",
+  teal: "bg-teal text-ink border-2 border-ink press",
+  ghost:
+    "bg-transparent border-2 border-transparent transition-colors duration-[120ms] ease-in hover:text-ink",
+};
+
+/* Default: pad 15px 24px, radius 12px, shadow 0 6px.
+   Small: pad 10px 16px, radius 8px, shadow 0 4px (press-sm rescales the travel).
+   Both clear 44px tall, so they are already valid touch targets. */
+const SIZES: Record<ButtonSize, string> = {
+  default: "px-6 py-[15px] rounded-btn",
+  sm: "px-4 py-[10px] rounded-control press-sm",
+};
+
+const Tag = href ? "a" : "button";
+const hasIcon = Astro.slots.has("icon");
+/* Only buttons that can load pay for the two-layer markup. */
+const canLoad = Astro.props.loading !== undefined;
+const inert = disabled || loading;
+
+const tagAttrs = href
+  ? {
+      href: inert ? undefined : href,
+      ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
+      /* aria-disabled keeps the control focusable, unlike removing it from the
+         tab order, and the missing href makes activation a no-op. */
+      ...(inert ? { "aria-disabled": true, role: "link" as const, tabindex: 0 } : {}),
+    }
+  : {
+      type,
+      /* Loading uses aria-disabled rather than the native attribute so focus
+         is not yanked out of the control mid-action. Handlers must check it. */
+      disabled,
+      ...(inert ? { "aria-disabled": true } : {}),
+    };
+---
+
+<Tag
+  {...tagAttrs}
+  {...rest}
+  aria-busy={loading ? "true" : undefined}
+  class:list={[
+    "relative inline-flex items-center justify-center text-body font-semibold leading-[1.25] no-underline select-none",
+    !canLoad && "gap-2.5",
+    FILLS[variant],
+    SIZES[size],
+    variant === "ghost" && (active ? "text-blue-deep" : "text-ink-muted"),
+    fullWidth && "w-full",
+    disabled && "opacity-[0.55] cursor-not-allowed",
+    loading && "cursor-progress",
+    className,
+  ]}
+>
+  {
+    canLoad ? (
+      /* Both layers share one grid cell, so the cell is as wide as the widest
+         of them in every state and the button never jumps. visibility, not
+         display, keeps the hidden layer measured. */
+      <span class="grid">
+        <span
+          class:list={[
+            "col-start-1 row-start-1 inline-flex items-center justify-center gap-2.5",
+            loading && "invisible",
+          ]}
+          aria-hidden={loading ? "true" : undefined}
+        >
+          {hasIcon && (
+            <span class="inline-flex shrink-0">
+              <slot name="icon" />
+            </span>
+          )}
+          <slot />
+        </span>
+        <span
+          class:list={[
+            "col-start-1 row-start-1 inline-flex items-center justify-center gap-2.5",
+            !loading && "invisible",
+          ]}
+          aria-hidden={loading ? undefined : "true"}
+        >
+          <Icon name="spinner" size={18} class="shrink-0 animate-spin" />
+          <slot />
+        </span>
+      </span>
+    ) : (
+      <Fragment>
+        {hasIcon && (
+          <span class="inline-flex shrink-0">
+            <slot name="icon" />
+          </span>
+        )}
+        <slot />
+      </Fragment>
+    )
+  }
+</Tag>

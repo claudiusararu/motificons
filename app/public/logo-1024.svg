@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Motificons</title>
+  <!-- LemonSqueezy store asset: same chip mark as favicon.svg (yellow, 2px-ratio ink border,
+       hard offset ink shadow, ink star with rounded joins), scaled to 1024x1024 with margins
+       so the shadow is never clipped. Hex colors only, never OKLCH. -->
+  <rect x="72" y="85" width="880" height="880" rx="251" fill="#183153"/>
+  <rect x="72" y="59" width="880" height="880" rx="251" fill="#FFD43B" stroke="#183153" stroke-width="26"/>
+  <path d="M512.0,267.8 L587.3,421.0 L754.0,445.2 L633.0,563.5 L659.9,730.2 L512.0,652.3 L364.1,730.2 L391.0,563.5 L270.0,445.2 L436.7,421.0 Z"
+        fill="#183153" stroke="#183153" stroke-width="19.1" stroke-linejoin="round"/>
+</svg>

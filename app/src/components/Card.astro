@@ -1,0 +1,102 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+export type CardVariant =
+  | "standard"
+  | "inverted"
+  | "blue"
+  | "teal"
+  | "grape"
+  | "violet"
+  | "red";
+
+interface Props extends HTMLAttributes<"div"> {
+  variant?: CardVariant;
+  /** Renders an <a> and turns on the press-down hover. */
+  href?: string;
+  /** Press-down hover without a link (for JS-driven cards). */
+  clickable?: boolean;
+  external?: boolean;
+  /** Drop the 28px 32px padding when the card holds its own layout. */
+  padded?: boolean;
+}
+
+const {
+  variant = "standard",
+  href,
+  clickable = false,
+  external = false,
+  padded = true,
+  class: className,
+  // Consumed by the parent for slot placement; must not reach the DOM.
+  slot,
+  ...rest
+} = Astro.props;
+
+/* Cards. No border; the hard shadow does the lifting.
+   Colored cards take their own hue at Open Color level 8 as the shadow. */
+const VARIANTS: Record<CardVariant, { surface: string; shadow: string }> = {
+  standard: {
+    surface: "bg-surface text-ink [--press-shadow-color:var(--color-card-shadow)]",
+    shadow: "shadow-card",
+  },
+  inverted: {
+    surface:
+      "on-navy bg-ink text-on-dark [--press-shadow-color:var(--color-ink-shadow-soft)]",
+    shadow: "shadow-card-ink",
+  },
+  blue: {
+    surface: "bg-blue text-ink [--press-shadow-color:var(--color-blue-deep)]",
+    shadow: "shadow-card-blue",
+  },
+  teal: {
+    surface: "bg-teal text-ink [--press-shadow-color:var(--color-teal-deep)]",
+    shadow: "shadow-card-teal",
+  },
+  grape: {
+    surface: "bg-grape text-ink [--press-shadow-color:var(--color-grape-deep)]",
+    shadow: "shadow-card-grape",
+  },
+  violet: {
+    surface: "bg-violet text-ink [--press-shadow-color:var(--color-violet-deep)]",
+    shadow: "shadow-card-violet",
+  },
+  red: {
+    surface: "bg-red text-ink [--press-shadow-color:var(--color-red-deep)]",
+    shadow: "shadow-card-red",
+  },
+};
+
+const Tag = href ? "a" : "div";
+const isPressable = Boolean(href) || clickable;
+const hasBadge = Astro.slots.has("badge");
+const { surface, shadow } = VARIANTS[variant];
+
+const tagAttrs = href
+  ? {
+      href,
+      ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
+    }
+  : {};
+---
+
+<Tag
+  {...tagAttrs}
+  {...rest}
+  class:list={[
+    "relative block rounded-card no-underline",
+    surface,
+    isPressable ? "press-card" : shadow,
+    padded && "px-8 py-7",
+    className,
+  ]}
+>
+  {
+    hasBadge && (
+      <span class="absolute -top-3 right-6 z-10">
+        <slot name="badge" />
+      </span>
+    )
+  }
+  <slot />
+</Tag>

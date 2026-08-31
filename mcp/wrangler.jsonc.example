@@ -1,0 +1,71 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "motificons-mcp",
+  // Add your Cloudflare account id here, or delete this line - wrangler
+  // infers the account from your `wrangler login` session.
+  "account_id": "YOUR_CLOUDFLARE_ACCOUNT_ID",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+
+  // Buffer, same reason app/wrangler.jsonc turns this on: nothing here reads
+  // node:fs, but the reused transforms lib (zip/base64 helpers) expects it.
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": {
+    "enabled": true
+  },
+
+  // Custom domain, attached on every `wrangler deploy`. Requires the domain
+  // to already be an active zone on your Cloudflare account. Replace with
+  // your own, or remove "routes" to deploy on workers.dev.
+  "routes": [{ "pattern": "mcp.your-domain.example", "custom_domain": true }],
+
+  // This Worker imports app/src/lib/storage.ts and data.ts verbatim (see
+  // mcp/README.md's "engine reuse" note) rather than copying them. Those
+  // files branch on Vite's `import.meta.env.DEV`, which only Astro/Vite ever
+  // defines - plain `wrangler dev`/`deploy` (esbuild) leaves it `undefined`
+  // and `undefined.DEV` throws. This Worker is never served through Vite, so
+  // pin it to a literal `false` at bundle time and let esbuild
+  // dead-code-eliminate the Vite-only branch.
+  "define": {
+    "import.meta.env.DEV": "false"
+  },
+
+  // Same bucket as app/wrangler.jsonc's ICONS binding - MCP reads the
+  // identical published icon bodies + search shards, never its own copy.
+  // Keep the two files' bucket names in sync by hand.
+  "r2_buckets": [
+    {
+      "binding": "ICONS",
+      "bucket_name": "YOUR_ICONS_BUCKET",
+      "preview_bucket_name": "YOUR_ICONS_PREVIEW_BUCKET"
+    }
+  ],
+
+  // Same database as app/wrangler.jsonc's DB binding (mcpKey, workspace,
+  // membership, collection) - paste your database id here AND there; both
+  // must match or local `--persist-to` reads two different local databases.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "motificons",
+      "database_id": "YOUR_D1_DATABASE_ID",
+      "migrations_dir": "../app/migrations"
+    }
+  ],
+
+  // Per-key call-rate abuse guard, separate from the app's anonymous search
+  // METER - different identity (API key, not cookie+IP), so a separate
+  // namespace. Create with `wrangler kv namespace create MCP_RATE`.
+  "kv_namespaces": [
+    {
+      "binding": "MCP_RATE",
+      "id": "YOUR_MCP_RATE_KV_ID",
+      "preview_id": "YOUR_MCP_RATE_KV_PREVIEW_ID"
+    }
+  ],
+
+  "vars": {
+    "PUBLIC_SITE_ORIGIN": "https://your-domain.example"
+  }
+}

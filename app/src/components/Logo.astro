@@ -1,0 +1,53 @@
+---
+import Icon, { type IconName } from "./Icon.astro";
+
+interface Props {
+  href?: string;
+  /** Navy surfaces (footer) need the wordmark in light text. */
+  onDark?: boolean;
+  class?: string;
+}
+
+const { href = "/", onDark = false, class: className } = Astro.props;
+
+/* Logo mark. Four recognizable silhouettes: "any icon, your style"
+   in motion. Star is first because it is also the static reduced-motion state
+   and the favicon glyph. */
+const GLYPHS: IconName[] = ["star", "heart", "bolt", "camera"];
+
+/* Hold 2.8s each (the design system allows 2.5-3s), so the cycle is 11.2s and the 300ms
+   crossfade is 2.68% of it. Negative delays start every layer already advanced
+   to its own slot, so nothing flashes on load and the order stays 0,1,2,3. */
+const HOLD_MS = 2800;
+const CYCLE_MS = HOLD_MS * GLYPHS.length;
+---
+
+<a
+  href={href}
+  class:list={[
+    "inline-flex shrink-0 items-center gap-2.5 no-underline",
+    className,
+  ]}
+>
+  <span
+    aria-hidden="true"
+    class="logo-chip grid size-7 shrink-0 place-items-center rounded-control border-2 border-ink bg-primary text-ink shadow-chip"
+  >
+    {
+      GLYPHS.map((glyph, index) => (
+        <Icon
+          name={glyph}
+          size={16}
+          class="logo-glyph col-start-1 row-start-1"
+          style={`animation-delay: ${index * HOLD_MS - CYCLE_MS}ms`}
+        />
+      ))
+    }
+  </span>
+  <span
+    class:list={[
+      "text-h3 font-bold tracking-tight",
+      onDark ? "text-on-dark" : "text-ink",
+    ]}>Motificons</span
+  >
+</a>

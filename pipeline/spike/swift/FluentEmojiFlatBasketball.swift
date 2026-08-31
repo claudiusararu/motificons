@@ -1,0 +1,66 @@
+import SwiftUI
+
+struct FluentEmojiFlatBasketball: Shape {
+    func path(in rect: CGRect) -> Path {
+        let vw = 32.0
+        let vh = 32.0
+        let s = min(rect.width / vw, rect.height / vh)
+        let ox = rect.minX + (rect.width - vw * s) / 2
+        let oy = rect.minY + (rect.height - vh * s) / 2
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: ox + x * s, y: oy + y * s) }
+        var path = Path()
+        path.move(to: p(16.0, 30.0))
+        path.addCurve(to: p(30.0, 16.0), control1: p(23.732, 30.0), control2: p(30.0, 23.732))
+        path.addCurve(to: p(16.0, 2.0), control1: p(30.0, 8.268), control2: p(23.732, 2.0))
+        path.addCurve(to: p(2.0, 16.0), control1: p(8.268, 2.0), control2: p(2.0, 8.268))
+        path.addCurve(to: p(16.0, 30.0), control1: p(2.0, 23.732), control2: p(8.268, 30.0))
+        path.move(to: p(2.03, 15.09))
+        path.addCurve(to: p(2.0, 16.179), control1: p(2.0059, 15.4525), control2: p(1.9959, 15.8157))
+        path.addCurve(to: p(3.028, 15.743), control1: p(2.3471, 16.0443), control2: p(2.6899, 15.8989))
+        path.addCurve(to: p(6.886, 13.318), control1: p(4.125, 15.239), control2: p(5.559, 14.451))
+        path.addCurve(to: p(9.462, 10.239), control1: p(7.856, 12.49), control2: p(8.776, 11.472))
+        path.addQuadCurve(to: p(11.754, 11.533), control: p(10.662, 10.866))
+        path.addCurve(to: p(7.66, 18.314), control1: p(10.032, 13.5573), control2: p(8.6494, 15.8474))
+        path.addCurve(to: p(6.064, 24.827), control1: p(6.8233, 20.3988), control2: p(6.286, 22.5916))
+        path.addQuadCurve(to: p(5.994, 25.792), control: p(6.014, 25.354))
+        path.addQuadCurve(to: p(6.971, 26.701), control: p(6.46, 26.269))
+        path.addCurve(to: p(7.059, 24.923), control1: p(6.971, 26.268), control2: p(6.988, 25.662))
+        path.addCurve(to: p(8.589, 18.686), control1: p(7.2722, 22.7822), control2: p(7.7873, 20.6824))
+        path.addCurve(to: p(12.611, 12.07), control1: p(9.5563, 16.2743), control2: p(10.9152, 14.0389))
+        path.addCurve(to: p(15.544, 14.163), control1: p(13.6212, 12.7209), control2: p(14.6, 13.4193))
+        path.addCurve(to: p(13.929, 16.521), control1: p(14.9072, 14.8768), control2: p(14.3644, 15.6693))
+        path.addCurve(to: p(15.194, 29.977), control1: p(11.774, 20.718), control2: p(12.078, 26.342))
+        path.addCurve(to: p(16.583, 29.988), control1: p(15.6565, 30.0036), control2: p(16.1201, 30.0073))
+        path.addCurve(to: p(14.819, 16.978), control1: p(13.202, 26.77), control2: p(12.673, 21.155))
+        path.addCurve(to: p(16.322, 14.793), control1: p(15.226, 16.185), control2: p(15.728, 15.448))
+        path.addCurve(to: p(21.299, 19.816), control1: p(18.1392, 16.3028), control2: p(19.806, 17.985))
+        path.addCurve(to: p(24.985, 25.372), control1: p(22.7121, 21.5388), control2: p(23.9471, 23.4003))
+        path.addQuadCurve(to: p(25.457, 26.322), control: p(25.26, 25.9))
+        path.addQuadCurve(to: p(26.21, 25.578), control: p(25.847, 25.965))
+        path.addCurve(to: p(25.872, 24.909), control1: p(26.1003, 25.3535), control2: p(25.9876, 25.1305))
+        path.addCurve(to: p(22.074, 19.184), control1: p(24.8025, 22.8773), control2: p(23.5301, 20.9592))
+        path.addCurve(to: p(17.036, 14.087), control1: p(20.734, 17.539), control2: p(19.074, 15.79))
+        path.addCurve(to: p(20.38, 12.212), control1: p(18.0021, 13.2278), control2: p(19.143, 12.5881))
+        path.addCurve(to: p(29.72, 13.204), control1: p(22.817, 11.466), control2: p(25.935, 11.602))
+        path.addCurve(to: p(29.42, 12.004), control1: p(29.6377, 12.7998), control2: p(29.5376, 12.3994))
+        path.addCurve(to: p(20.087, 11.256), control1: p(25.77, 10.594), control2: p(22.64, 10.474))
+        path.addCurve(to: p(16.252, 13.448), control1: p(18.6606, 11.6901), control2: p(17.35, 12.4392))
+        path.addCurve(to: p(13.285, 11.315), control1: p(15.2969, 12.691), control2: p(14.3068, 11.9793))
+        path.addCurve(to: p(23.577, 4.226), control1: p(15.689, 8.728), control2: p(19.005, 6.241))
+        path.addCurve(to: p(22.517, 3.607), control1: p(23.2329, 4.0043), control2: p(22.8792, 3.7977))
+        path.addCurve(to: p(12.425, 10.771), control1: p(18.073, 5.661), control2: p(14.813, 8.165))
+        path.addQuadCurve(to: p(9.903, 9.341), control: p(11.225, 10.032))
+        path.addQuadCurve(to: p(10.119, 8.783), control: p(10.019, 9.068))
+        path.addCurve(to: p(10.35, 3.186), control1: p(10.679, 7.189), control2: p(10.834, 5.33))
+        path.addQuadCurve(to: p(9.424, 3.636), control: p(9.877, 3.396))
+        path.addCurve(to: p(9.176, 8.452), control1: p(9.807, 5.51), control2: p(9.649, 7.103))
+        path.addCurve(to: p(9.008, 8.888), control1: p(9.1243, 8.5989), control2: p(9.0682, 8.7443))
+        path.addCurve(to: p(5.105, 7.206), control1: p(7.7349, 8.2648), control2: p(6.4323, 7.7035))
+        path.addQuadCurve(to: p(4.48, 8.041), control: p(4.777, 7.612))
+        path.addCurve(to: p(8.57, 9.787), control1: p(5.8725, 8.5521), control2: p(7.2377, 9.1348))
+        path.addCurve(to: p(6.237, 12.557), control1: p(7.955, 10.878), control2: p(7.13, 11.795))
+        path.addCurve(to: p(2.61, 14.835), control1: p(5.001, 13.612), control2: p(3.654, 14.355))
+        path.addQuadCurve(to: p(2.028, 15.09), control: p(2.298, 14.978))
+        return path
+    }
+}

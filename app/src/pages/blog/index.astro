@@ -1,0 +1,42 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Card from "../../components/Card.astro";
+import { sortedPosts, formatPostDate } from "../../lib/blog";
+
+export const prerender = true;
+
+const posts = await sortedPosts();
+---
+
+<Layout
+  title="Blog - Motificons"
+  description="Notes on icons, MCP for coding agents, and building with the Motificons icon library."
+>
+  <Header />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <h1 class="pt-10 text-h1 font-bold">Blog</h1>
+      <p class="mt-4 text-ink-muted">
+        Notes on icons, coding agents, and building with the library - written
+        by the person building it.
+      </p>
+
+      <div class="mt-10 flex flex-col gap-6">
+        {
+          posts.map((post) => (
+            <Card variant="standard" href={`/blog/${post.id}`}>
+              <p class="text-meta text-ink-muted">{formatPostDate(post.data.pubDate)}</p>
+              <h2 class="mt-2 text-h3 font-semibold">{post.data.title}</h2>
+              <p class="mt-2 text-body text-ink-muted">{post.data.description}</p>
+            </Card>
+          ))
+        }
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

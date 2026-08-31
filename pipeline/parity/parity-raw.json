@@ -1,0 +1,2388 @@
+{
+  "generatedAt": "2026-08-08T08:25:31.351Z",
+  "app": "http://127.0.0.1:4321",
+  "repeats": 5,
+  "rows": [
+    {
+      "q": "star",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 1806,
+        "ids": [
+          "arcticons:star",
+          "tabler:star",
+          "hugeicons:star",
+          "glyphs:star",
+          "icon-park-outline:star",
+          "mynaui:star",
+          "tdesign:star",
+          "lucide:star",
+          "iconamoon:star",
+          "iconoir:star"
+        ]
+      },
+      "meili": {
+        "total": 28298,
+        "ids": [
+          "akar-icons:star",
+          "arcticons:star",
+          "at-icons:star",
+          "bi:star",
+          "boxicons:star",
+          "bx:star",
+          "bxs:star",
+          "bytesize:star",
+          "carbon:star",
+          "charm:star"
+        ]
+      }
+    },
+    {
+      "q": "home",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 386,
+        "ids": [
+          "arcticons:home",
+          "tabler:home",
+          "icon-park-outline:home",
+          "mynaui:home",
+          "tdesign:home",
+          "iconamoon:home",
+          "iconoir:home",
+          "lets-icons:home",
+          "line-md:home",
+          "majesticons:home"
+        ]
+      },
+      "meili": {
+        "total": 3648,
+        "ids": [
+          "akar-icons:home",
+          "arcticons:home",
+          "boxicons:home",
+          "bx:home",
+          "bxs:home",
+          "bytesize:home",
+          "carbon:home",
+          "charm:home",
+          "cil:home",
+          "circum:home"
+        ]
+      }
+    },
+    {
+      "q": "settings",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0.2,
+      "correlation": null,
+      "shards": {
+        "total": 547,
+        "ids": [
+          "arcticons:settings",
+          "tabler:settings",
+          "lucide:settings",
+          "iconamoon:settings",
+          "iconoir:settings",
+          "mage:settings",
+          "material-symbols:settings",
+          "material-symbols-light:settings",
+          "ci:settings",
+          "proicons:settings"
+        ]
+      },
+      "meili": {
+        "total": 1667,
+        "ids": [
+          "arcticons:settings",
+          "bytesize:settings",
+          "carbon:settings",
+          "ci:settings",
+          "cil:settings",
+          "circum:settings",
+          "codicon:settings",
+          "duo-icons:settings",
+          "famicons:settings",
+          "feather:settings"
+        ]
+      }
+    },
+    {
+      "q": "calendar",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 358,
+        "ids": [
+          "tabler:calendar",
+          "glyphs:calendar",
+          "icon-park-outline:calendar",
+          "mynaui:calendar",
+          "tdesign:calendar",
+          "lucide:calendar",
+          "iconoir:calendar",
+          "lets-icons:calendar",
+          "line-md:calendar",
+          "majesticons:calendar"
+        ]
+      },
+      "meili": {
+        "total": 2160,
+        "ids": [
+          "akar-icons:calendar",
+          "at-icons:calendar",
+          "bi:calendar",
+          "boxicons:calendar",
+          "bx:calendar",
+          "bxs:calendar",
+          "bytesize:calendar",
+          "carbon:calendar",
+          "charm:calendar",
+          "ci:calendar"
+        ]
+      }
+    },
+    {
+      "q": "trash",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 1122,
+        "ids": [
+          "tabler:trash",
+          "glyphs:trash",
+          "mynaui:trash",
+          "lucide:trash",
+          "iconamoon:trash",
+          "iconoir:trash",
+          "lets-icons:trash",
+          "line-md:trash",
+          "majesticons:trash",
+          "mage:trash"
+        ]
+      },
+      "meili": {
+        "total": 346,
+        "ids": [
+          "akar-icons:trash",
+          "bi:trash",
+          "boxicons:trash",
+          "bpmn:trash",
+          "bx:trash",
+          "bxs:trash",
+          "bytesize:trash",
+          "cil:trash",
+          "circum:trash",
+          "codex:trash"
+        ]
+      }
+    },
+    {
+      "q": "heart",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 1409,
+        "ids": [
+          "arcticons:heart",
+          "tabler:heart",
+          "streamline:heart",
+          "glyphs:heart",
+          "icon-park-outline:heart",
+          "mynaui:heart",
+          "tdesign:heart",
+          "lucide:heart",
+          "iconamoon:heart",
+          "iconoir:heart"
+        ]
+      },
+      "meili": {
+        "total": 6539,
+        "ids": [
+          "akar-icons:heart",
+          "arcticons:heart",
+          "at-icons:heart",
+          "bi:heart",
+          "boxicons:heart",
+          "bx:heart",
+          "bxs:heart",
+          "bytesize:heart",
+          "charm:heart",
+          "cil:heart"
+        ]
+      }
+    },
+    {
+      "q": "search",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 400,
+        "ids": [
+          "tabler:search",
+          "glyphs:search",
+          "icon-park-outline:search",
+          "mynaui:search",
+          "tdesign:search",
+          "lucide:search",
+          "iconamoon:search",
+          "iconoir:search",
+          "lets-icons:search",
+          "line-md:search"
+        ]
+      },
+      "meili": {
+        "total": 1778,
+        "ids": [
+          "akar-icons:search",
+          "bi:search",
+          "boxicons:search",
+          "bx:search",
+          "bxs:search",
+          "bytesize:search",
+          "carbon:search",
+          "catppuccin:search",
+          "charm:search",
+          "ci:search"
+        ]
+      }
+    },
+    {
+      "q": "bell",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 1340,
+        "ids": [
+          "tabler:bell",
+          "glyphs:bell",
+          "mynaui:bell",
+          "lucide:bell",
+          "iconoir:bell",
+          "lets-icons:bell",
+          "line-md:bell",
+          "majesticons:bell",
+          "ci:bell",
+          "proicons:bell"
+        ]
+      },
+      "meili": {
+        "total": 2245,
+        "ids": [
+          "akar-icons:bell",
+          "at-icons:bell",
+          "bi:bell",
+          "boxicons:bell",
+          "bx:bell",
+          "bxs:bell",
+          "bytesize:bell",
+          "charm:bell",
+          "ci:bell",
+          "cil:bell"
+        ]
+      }
+    },
+    {
+      "q": "camera",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 381,
+        "ids": [
+          "arcticons:camera",
+          "tabler:camera",
+          "glyphs:camera",
+          "icon-park-outline:camera",
+          "mynaui:camera",
+          "tdesign:camera",
+          "lucide:camera",
+          "iconoir:camera",
+          "lets-icons:camera",
+          "majesticons:camera"
+        ]
+      },
+      "meili": {
+        "total": 1498,
+        "ids": [
+          "akar-icons:camera",
+          "arcticons:camera",
+          "bi:camera",
+          "boxicons:camera",
+          "bx:camera",
+          "bxs:camera",
+          "bytesize:camera",
+          "carbon:camera",
+          "charm:camera",
+          "ci:camera"
+        ]
+      }
+    },
+    {
+      "q": "folder",
+      "cls": "exact",
+      "base": null,
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 789,
+        "ids": [
+          "arcticons:folder",
+          "tabler:folder",
+          "glyphs:folder",
+          "icon-park-outline:folder",
+          "mynaui:folder",
+          "tdesign:folder",
+          "lucide:folder",
+          "iconamoon:folder",
+          "iconoir:folder",
+          "lets-icons:folder"
+        ]
+      },
+      "meili": {
+        "total": 4080,
+        "ids": [
+          "akar-icons:folder",
+          "arcticons:folder",
+          "at-icons:folder",
+          "bi:folder",
+          "boxicons:folder",
+          "bx:folder",
+          "bxs:folder",
+          "bytesize:folder",
+          "carbon:folder",
+          "catppuccin:folder"
+        ]
+      }
+    },
+    {
+      "q": "arr",
+      "cls": "prefix",
+      "base": null,
+      "filters": null,
+      "overlap": 0.3,
+      "correlation": 1,
+      "shards": {
+        "total": 922,
+        "ids": [
+          "selfhst:arr-dashboard",
+          "selfhst:arr-dashboard-dark",
+          "selfhst:arr-dashboard-light",
+          "token:arrr",
+          "token-branded:arrr",
+          "glyphs:arrow",
+          "lets-icons:array",
+          "carbon:array",
+          "uil:arrow",
+          "memory:arrow"
+        ]
+      },
+      "meili": {
+        "total": 11809,
+        "ids": [
+          "selfhst:arr-dashboard",
+          "selfhst:arr-dashboard-dark",
+          "selfhst:arr-dashboard-light",
+          "akar-icons:arrow-back",
+          "akar-icons:arrow-back-thick",
+          "akar-icons:arrow-back-thick-fill",
+          "akar-icons:arrow-clockwise",
+          "akar-icons:arrow-counter-clockwise",
+          "akar-icons:arrow-cycle",
+          "akar-icons:arrow-down"
+        ]
+      }
+    },
+    {
+      "q": "sett",
+      "cls": "prefix",
+      "base": null,
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 715,
+        "ids": [
+          "arcticons:setter",
+          "icon-park-outline:setting",
+          "tdesign:setting",
+          "uil:setting",
+          "subway:settong",
+          "ep:setting",
+          "uiw:setting",
+          "icon-park:setting",
+          "icon-park-solid:setting",
+          "icon-park-twotone:setting"
+        ]
+      },
+      "meili": {
+        "total": 2793,
+        "ids": [
+          "akar-icons:settings-horizontal",
+          "akar-icons:settings-vertical",
+          "ant-design:setting-filled",
+          "ant-design:setting-outlined",
+          "ant-design:setting-twotone",
+          "arcticons:setter",
+          "arcticons:settings",
+          "arcticons:settings-alt-1",
+          "arcticons:settings-alt-2",
+          "basil:settings-adjust-outline"
+        ]
+      }
+    },
+    {
+      "q": "calen",
+      "cls": "prefix",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 715,
+        "ids": [
+          "arcticons:calendly",
+          "tabler:calendar",
+          "glyphs:calendar",
+          "icon-park-outline:calendar",
+          "mynaui:calendar",
+          "tdesign:calendar",
+          "lucide:calendar",
+          "iconoir:calendar",
+          "lets-icons:calendar",
+          "line-md:calendar"
+        ]
+      },
+      "meili": {
+        "total": 2175,
+        "ids": [
+          "akar-icons:calendar",
+          "ant-design:calendar-filled",
+          "ant-design:calendar-outlined",
+          "ant-design:calendar-twotone",
+          "arcticons:calendar-1",
+          "arcticons:calendar-10",
+          "arcticons:calendar-11",
+          "arcticons:calendar-12",
+          "arcticons:calendar-13",
+          "arcticons:calendar-14"
+        ]
+      }
+    },
+    {
+      "q": "chev",
+      "cls": "prefix",
+      "base": null,
+      "filters": null,
+      "overlap": 0.4,
+      "correlation": -0.19999999999999996,
+      "shards": {
+        "total": 1297,
+        "ids": [
+          "bubbles:chev-up-outline",
+          "bubbles:chev-down-outline",
+          "bubbles:chev-left-outline",
+          "bubbles:chev-right-outline",
+          "circum:circle-chev-up",
+          "circum:square-chev-up",
+          "circum:circle-chev-down",
+          "circum:circle-chev-left",
+          "circum:square-chev-down",
+          "circum:square-chev-left"
+        ]
+      },
+      "meili": {
+        "total": 6067,
+        "ids": [
+          "bubbles:chev-down-outline",
+          "bubbles:chev-left-outline",
+          "bubbles:chev-right-outline",
+          "bubbles:chev-up-outline",
+          "akar-icons:chevron-down",
+          "akar-icons:chevron-down-small",
+          "akar-icons:chevron-horizontal",
+          "akar-icons:chevron-left",
+          "akar-icons:chevron-left-small",
+          "akar-icons:chevron-right"
+        ]
+      }
+    },
+    {
+      "q": "downl",
+      "cls": "prefix",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 637,
+        "ids": [
+          "tabler:download",
+          "icon-park-outline:download",
+          "mynaui:download",
+          "tdesign:download",
+          "lucide:download",
+          "iconamoon:download",
+          "iconoir:download",
+          "lets-icons:download",
+          "line-md:download",
+          "mage:download"
+        ]
+      },
+      "meili": {
+        "total": 5841,
+        "ids": [
+          "akar-icons:download",
+          "ant-design:download-outlined",
+          "arcticons:downloader-for-gcam",
+          "arcticons:downloadnavi",
+          "arcticons:downloads",
+          "basil:download-outline",
+          "basil:download-solid",
+          "bi:download",
+          "bubbles:download-drawer-outline",
+          "bubbles:download-outline"
+        ]
+      }
+    },
+    {
+      "q": "notif",
+      "cls": "prefix",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 1667,
+        "ids": [
+          "ls:notify",
+          "selfhst:notifuse",
+          "selfhst:notifiarr",
+          "tabler:notification",
+          "mynaui:notification",
+          "tdesign:notification",
+          "iconamoon:notification",
+          "ci:notification",
+          "grommet-icons:notification",
+          "system-uicons:notification"
+        ]
+      },
+      "meili": {
+        "total": 1235,
+        "ids": [
+          "ant-design:notification-filled",
+          "ant-design:notification-outlined",
+          "ant-design:notification-twotone",
+          "arcticons:notification-dictionary",
+          "arcticons:notification-notes",
+          "arcticons:notificationcron",
+          "arcticons:notificationlog",
+          "arcticons:notificationnotes",
+          "arcticons:notifications",
+          "arcticons:notifiche-meteo"
+        ]
+      }
+    },
+    {
+      "q": "brack",
+      "cls": "prefix",
+      "base": null,
+      "filters": null,
+      "overlap": 0.2,
+      "correlation": null,
+      "shards": {
+        "total": 964,
+        "ids": [
+          "streamline:bracket",
+          "selfhst:bracket",
+          "boxicons:bracket",
+          "bx:bracket",
+          "streamline-color:bracket",
+          "tabler:brackets",
+          "tdesign:brackets",
+          "lucide:brackets",
+          "proicons:brackets",
+          "meteor-icons:brackets"
+        ]
+      },
+      "meili": {
+        "total": 4377,
+        "ids": [
+          "arcticons:brackeyside",
+          "boxicons:bracket",
+          "boxicons:bracket-curly",
+          "boxicons:bracket-curly-filled",
+          "boxicons:bracket-filled",
+          "boxicons:bracket-round",
+          "boxicons:bracket-round-filled",
+          "bx:bracket",
+          "codex:brackets",
+          "codex:brackets-vertical"
+        ]
+      }
+    },
+    {
+      "q": "mess",
+      "cls": "prefix",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 843,
+        "ids": [
+          "tabler:message",
+          "icon-park-outline:message",
+          "mynaui:message",
+          "iconoir:message",
+          "lets-icons:message",
+          "majesticons:message",
+          "mage:message",
+          "ci:message",
+          "system-uicons:message",
+          "meteor-icons:message"
+        ]
+      },
+      "meili": {
+        "total": 1963,
+        "ids": [
+          "ant-design:message-filled",
+          "ant-design:message-outlined",
+          "ant-design:message-twotone",
+          "arcticons:message-assistant-answer-phone",
+          "arcticons:messagease-keyboard",
+          "arcticons:messages",
+          "arcticons:messages-2",
+          "arcticons:messages-3",
+          "arcticons:messaging",
+          "arcticons:messenger"
+        ]
+      }
+    },
+    {
+      "q": "srrow",
+      "cls": "typo-pos1-2",
+      "base": "arrow",
+      "filters": null,
+      "overlap": 1,
+      "correlation": null,
+      "shards": {
+        "total": 0,
+        "ids": []
+      },
+      "meili": {
+        "total": 0,
+        "ids": []
+      }
+    },
+    {
+      "q": "aettings",
+      "cls": "typo-pos1-2",
+      "base": "settings",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 0,
+        "ids": []
+      },
+      "meili": {
+        "total": 1398,
+        "ids": [
+          "akar-icons:settings-horizontal",
+          "akar-icons:settings-vertical",
+          "arcticons:settings",
+          "arcticons:settings-alt-1",
+          "arcticons:settings-alt-2",
+          "basil:settings-adjust-outline",
+          "basil:settings-adjust-solid",
+          "basil:settings-alt-outline",
+          "basil:settings-alt-solid",
+          "basil:settings-outline"
+        ]
+      }
+    },
+    {
+      "q": "xalendar",
+      "cls": "typo-pos1-2",
+      "base": "calendar",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 0,
+        "ids": []
+      },
+      "meili": {
+        "total": 2146,
+        "ids": [
+          "akar-icons:calendar",
+          "ant-design:calendar-filled",
+          "ant-design:calendar-outlined",
+          "ant-design:calendar-twotone",
+          "arcticons:calendar-1",
+          "arcticons:calendar-10",
+          "arcticons:calendar-11",
+          "arcticons:calendar-12",
+          "arcticons:calendar-13",
+          "arcticons:calendar-14"
+        ]
+      }
+    },
+    {
+      "q": "yrash",
+      "cls": "typo-pos1-2",
+      "base": "trash",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 1,
+        "ids": [
+          "arcticons:yris"
+        ]
+      },
+      "meili": {
+        "total": 0,
+        "ids": []
+      }
+    },
+    {
+      "q": "xamera",
+      "cls": "typo-pos1-2",
+      "base": "camera",
+      "filters": null,
+      "overlap": 1,
+      "correlation": null,
+      "shards": {
+        "total": 0,
+        "ids": []
+      },
+      "meili": {
+        "total": 0,
+        "ids": []
+      }
+    },
+    {
+      "q": "golder",
+      "cls": "typo-pos1-2",
+      "base": "folder",
+      "filters": null,
+      "overlap": 0.4,
+      "correlation": 0.4,
+      "shards": {
+        "total": 78,
+        "ids": [
+          "arcticons:goldex",
+          "picon:golfer",
+          "pixel:golden",
+          "fxemoji:golfer",
+          "token-branded:golden",
+          "hugeicons:gold",
+          "streamline:gold",
+          "mdi:gold",
+          "streamline-plump:gold",
+          "streamline-sharp:gold"
+        ]
+      },
+      "meili": {
+        "total": 25,
+        "ids": [
+          "ant-design:golden-filled",
+          "arcticons:golden-discs",
+          "arcticons:goldenergy",
+          "arcticons:goldenone",
+          "arcticons:goldenwestcu",
+          "arcticons:goldex",
+          "cib:goldenline",
+          "fxemoji:golfer",
+          "picon:golfer",
+          "pixel:golden"
+        ]
+      }
+    },
+    {
+      "q": "aearch",
+      "cls": "typo-pos1-2",
+      "base": "search",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 0,
+        "ids": []
+      },
+      "meili": {
+        "total": 6,
+        "ids": [
+          "devicon-original:aarch64",
+          "devicon-plain:aarch64",
+          "devicon:aarch64",
+          "game-icons:anarchy",
+          "thesvg-color:aarch64",
+          "thesvg:aarch64"
+        ]
+      }
+    },
+    {
+      "q": "hrart",
+      "cls": "typo-pos1-2",
+      "base": "heart",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 2,
+        "ids": [
+          "dinkie-icons:otfeature-hrzt",
+          "dinkie-icons:otfeature-hrzt-small-filled"
+        ]
+      },
+      "meili": {
+        "total": 2185,
+        "ids": [
+          "akar-icons:heart",
+          "ant-design:heart-filled",
+          "ant-design:heart-outlined",
+          "ant-design:heart-twotone",
+          "arcticons:heart",
+          "arcticons:heartbeat",
+          "arcticons:hearth",
+          "arcticons:hearthstone",
+          "at-icons:heart",
+          "at-icons:heart-broken"
+        ]
+      }
+    },
+    {
+      "q": "artow",
+      "cls": "typo-pos3",
+      "base": "arrow",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 814,
+        "ids": [
+          "glyphs:arrow",
+          "uil:arrow",
+          "memory:arrow",
+          "ps:arto",
+          "maki:arrow",
+          "gis:arrow",
+          "glyphs-poly:arrow",
+          "flat-ui:arrow",
+          "arcticons:arlo",
+          "arcticons:arte"
+        ]
+      },
+      "meili": {
+        "total": 11651,
+        "ids": [
+          "akar-icons:arrow-back",
+          "akar-icons:arrow-back-thick",
+          "akar-icons:arrow-back-thick-fill",
+          "akar-icons:arrow-clockwise",
+          "akar-icons:arrow-counter-clockwise",
+          "akar-icons:arrow-cycle",
+          "akar-icons:arrow-down",
+          "akar-icons:arrow-down-left",
+          "akar-icons:arrow-down-right",
+          "akar-icons:arrow-down-thick"
+        ]
+      }
+    },
+    {
+      "q": "seytings",
+      "cls": "typo-pos3",
+      "base": "settings",
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 553,
+        "ids": [
+          "material-symbols:settings-seating",
+          "material-symbols-light:settings-seating",
+          "material-symbols:settings-seating-outline",
+          "material-symbols:settings-seating-rounded",
+          "arcticons:settings",
+          "tabler:settings",
+          "lucide:settings",
+          "iconamoon:settings",
+          "iconoir:settings",
+          "mage:settings"
+        ]
+      },
+      "meili": {
+        "total": 1634,
+        "ids": [
+          "akar-icons:settings-horizontal",
+          "akar-icons:settings-vertical",
+          "arcticons:settings",
+          "arcticons:settings-alt-1",
+          "arcticons:settings-alt-2",
+          "basil:settings-adjust-outline",
+          "basil:settings-adjust-solid",
+          "basil:settings-alt-outline",
+          "basil:settings-alt-solid",
+          "basil:settings-outline"
+        ]
+      }
+    },
+    {
+      "q": "cakendar",
+      "cls": "typo-pos3",
+      "base": "calendar",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 350,
+        "ids": [
+          "tabler:calendar",
+          "glyphs:calendar",
+          "icon-park-outline:calendar",
+          "mynaui:calendar",
+          "tdesign:calendar",
+          "lucide:calendar",
+          "iconoir:calendar",
+          "lets-icons:calendar",
+          "line-md:calendar",
+          "majesticons:calendar"
+        ]
+      },
+      "meili": {
+        "total": 2152,
+        "ids": [
+          "akar-icons:calendar",
+          "ant-design:calendar-filled",
+          "ant-design:calendar-outlined",
+          "ant-design:calendar-twotone",
+          "arcticons:calendar-1",
+          "arcticons:calendar-10",
+          "arcticons:calendar-11",
+          "arcticons:calendar-12",
+          "arcticons:calendar-13",
+          "arcticons:calendar-14"
+        ]
+      }
+    },
+    {
+      "q": "trssh",
+      "cls": "typo-pos3",
+      "base": "trash",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 305,
+        "ids": [
+          "tabler:trash",
+          "glyphs:trash",
+          "mynaui:trash",
+          "lucide:trash",
+          "iconamoon:trash",
+          "iconoir:trash",
+          "lets-icons:trash",
+          "line-md:trash",
+          "majesticons:trash",
+          "mage:trash"
+        ]
+      },
+      "meili": {
+        "total": 344,
+        "ids": [
+          "akar-icons:trash",
+          "akar-icons:trash-bin",
+          "akar-icons:trash-can",
+          "arcticons:trashcan",
+          "at-icons:trash-can",
+          "basil:trash-alt-outline",
+          "basil:trash-alt-solid",
+          "basil:trash-outline",
+          "basil:trash-solid",
+          "bi:trash"
+        ]
+      }
+    },
+    {
+      "q": "canera",
+      "cls": "typo-pos3",
+      "base": "camera",
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 646,
+        "ids": [
+          "arcticons:camera",
+          "tabler:camera",
+          "glyphs:camera",
+          "icon-park-outline:camera",
+          "mynaui:camera",
+          "tdesign:camera",
+          "lucide:camera",
+          "iconoir:camera",
+          "lets-icons:camera",
+          "majesticons:camera"
+        ]
+      },
+      "meili": {
+        "total": 1492,
+        "ids": [
+          "akar-icons:camera",
+          "ant-design:camera-filled",
+          "ant-design:camera-outlined",
+          "ant-design:camera-twotone",
+          "arcticons:camera",
+          "arcticons:camera-data-folders",
+          "arcticons:camera-file-transfer",
+          "arcticons:camera-fv5-lite",
+          "arcticons:camera-pro",
+          "arcticons:camera360"
+        ]
+      }
+    },
+    {
+      "q": "fokder",
+      "cls": "typo-pos3",
+      "base": "folder",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 706,
+        "ids": [
+          "arcticons:folder",
+          "tabler:folder",
+          "glyphs:folder",
+          "icon-park-outline:folder",
+          "mynaui:folder",
+          "tdesign:folder",
+          "lucide:folder",
+          "iconamoon:folder",
+          "iconoir:folder",
+          "lets-icons:folder"
+        ]
+      },
+      "meili": {
+        "total": 4010,
+        "ids": [
+          "akar-icons:folder",
+          "akar-icons:folder-add",
+          "ant-design:folder-add-filled",
+          "ant-design:folder-add-outlined",
+          "ant-design:folder-add-twotone",
+          "ant-design:folder-filled",
+          "ant-design:folder-open-filled",
+          "ant-design:folder-open-outlined",
+          "ant-design:folder-open-twotone",
+          "ant-design:folder-outlined"
+        ]
+      }
+    },
+    {
+      "q": "sesrch",
+      "cls": "typo-pos3",
+      "base": "search",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 303,
+        "ids": [
+          "tabler:search",
+          "glyphs:search",
+          "icon-park-outline:search",
+          "mynaui:search",
+          "tdesign:search",
+          "lucide:search",
+          "iconamoon:search",
+          "iconoir:search",
+          "lets-icons:search",
+          "line-md:search"
+        ]
+      },
+      "meili": {
+        "total": 1775,
+        "ids": [
+          "akar-icons:search",
+          "ant-design:search-outlined",
+          "arcticons:searchbar-ex",
+          "basil:search-outline",
+          "basil:search-solid",
+          "bi:search",
+          "bi:search-heart",
+          "bi:search-heart-fill",
+          "bitcoin-icons:search-filled",
+          "bitcoin-icons:search-outline"
+        ]
+      }
+    },
+    {
+      "q": "trsh",
+      "cls": "typo-pos3",
+      "base": "trash",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 570,
+        "ids": [
+          "tabler:trash",
+          "glyphs:trash",
+          "mynaui:trash",
+          "lucide:trash",
+          "iconamoon:trash",
+          "iconoir:trash",
+          "lets-icons:trash",
+          "line-md:trash",
+          "majesticons:trash",
+          "mage:trash"
+        ]
+      },
+      "meili": {
+        "total": 372,
+        "ids": [
+          "akar-icons:trash",
+          "akar-icons:trash-bin",
+          "akar-icons:trash-can",
+          "arcticons:tmshappinest",
+          "arcticons:trashcan",
+          "arcticons:tryhackme",
+          "at-icons:trash-can",
+          "basil:trash-alt-outline",
+          "basil:trash-alt-solid",
+          "basil:trash-outline"
+        ]
+      }
+    },
+    {
+      "q": "arroe",
+      "cls": "typo-pos4+",
+      "base": "arrow",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 741,
+        "ids": [
+          "arcticons:arboe",
+          "glyphs:arrow",
+          "uil:arrow",
+          "memory:arrow",
+          "maki:arrow",
+          "gis:arrow",
+          "glyphs-poly:arrow",
+          "flat-ui:arrow",
+          "arcticons:arlo",
+          "arcticons:arte"
+        ]
+      },
+      "meili": {
+        "total": 11652,
+        "ids": [
+          "akar-icons:arrow-back",
+          "akar-icons:arrow-back-thick",
+          "akar-icons:arrow-back-thick-fill",
+          "akar-icons:arrow-clockwise",
+          "akar-icons:arrow-counter-clockwise",
+          "akar-icons:arrow-cycle",
+          "akar-icons:arrow-down",
+          "akar-icons:arrow-down-left",
+          "akar-icons:arrow-down-right",
+          "akar-icons:arrow-down-thick"
+        ]
+      }
+    },
+    {
+      "q": "settongs",
+      "cls": "typo-pos4+",
+      "base": "settings",
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 544,
+        "ids": [
+          "arcticons:settings",
+          "tabler:settings",
+          "lucide:settings",
+          "iconamoon:settings",
+          "iconoir:settings",
+          "mage:settings",
+          "material-symbols:settings",
+          "material-symbols-light:settings",
+          "ci:settings",
+          "proicons:settings"
+        ]
+      },
+      "meili": {
+        "total": 1632,
+        "ids": [
+          "akar-icons:settings-horizontal",
+          "akar-icons:settings-vertical",
+          "arcticons:settings",
+          "arcticons:settings-alt-1",
+          "arcticons:settings-alt-2",
+          "basil:settings-adjust-outline",
+          "basil:settings-adjust-solid",
+          "basil:settings-alt-outline",
+          "basil:settings-alt-solid",
+          "basil:settings-outline"
+        ]
+      }
+    },
+    {
+      "q": "calemdar",
+      "cls": "typo-pos4+",
+      "base": "calendar",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 350,
+        "ids": [
+          "tabler:calendar",
+          "glyphs:calendar",
+          "icon-park-outline:calendar",
+          "mynaui:calendar",
+          "tdesign:calendar",
+          "lucide:calendar",
+          "iconoir:calendar",
+          "lets-icons:calendar",
+          "line-md:calendar",
+          "majesticons:calendar"
+        ]
+      },
+      "meili": {
+        "total": 2152,
+        "ids": [
+          "akar-icons:calendar",
+          "ant-design:calendar-filled",
+          "ant-design:calendar-outlined",
+          "ant-design:calendar-twotone",
+          "arcticons:calendar-1",
+          "arcticons:calendar-10",
+          "arcticons:calendar-11",
+          "arcticons:calendar-12",
+          "arcticons:calendar-13",
+          "arcticons:calendar-14"
+        ]
+      }
+    },
+    {
+      "q": "trasj",
+      "cls": "typo-pos4+",
+      "base": "trash",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 1120,
+        "ids": [
+          "tabler:trash",
+          "glyphs:trash",
+          "mynaui:trash",
+          "lucide:trash",
+          "iconamoon:trash",
+          "iconoir:trash",
+          "lets-icons:trash",
+          "line-md:trash",
+          "majesticons:trash",
+          "mage:trash"
+        ]
+      },
+      "meili": {
+        "total": 347,
+        "ids": [
+          "akar-icons:trash",
+          "akar-icons:trash-bin",
+          "akar-icons:trash-can",
+          "arcticons:trashcan",
+          "at-icons:trash-can",
+          "basil:trash-alt-outline",
+          "basil:trash-alt-solid",
+          "basil:trash-outline",
+          "basil:trash-solid",
+          "bi:trash"
+        ]
+      }
+    },
+    {
+      "q": "cameta",
+      "cls": "typo-pos4+",
+      "base": "camera",
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 352,
+        "ids": [
+          "arcticons:camera",
+          "tabler:camera",
+          "glyphs:camera",
+          "icon-park-outline:camera",
+          "mynaui:camera",
+          "tdesign:camera",
+          "lucide:camera",
+          "iconoir:camera",
+          "lets-icons:camera",
+          "majesticons:camera"
+        ]
+      },
+      "meili": {
+        "total": 1490,
+        "ids": [
+          "akar-icons:camera",
+          "ant-design:camera-filled",
+          "ant-design:camera-outlined",
+          "ant-design:camera-twotone",
+          "arcticons:camera",
+          "arcticons:camera-data-folders",
+          "arcticons:camera-file-transfer",
+          "arcticons:camera-fv5-lite",
+          "arcticons:camera-pro",
+          "arcticons:camera360"
+        ]
+      }
+    },
+    {
+      "q": "foldrr",
+      "cls": "typo-pos4+",
+      "base": "folder",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 778,
+        "ids": [
+          "arcticons:folder",
+          "tabler:folder",
+          "glyphs:folder",
+          "icon-park-outline:folder",
+          "mynaui:folder",
+          "tdesign:folder",
+          "lucide:folder",
+          "iconamoon:folder",
+          "iconoir:folder",
+          "lets-icons:folder"
+        ]
+      },
+      "meili": {
+        "total": 4010,
+        "ids": [
+          "akar-icons:folder",
+          "akar-icons:folder-add",
+          "ant-design:folder-add-filled",
+          "ant-design:folder-add-outlined",
+          "ant-design:folder-add-twotone",
+          "ant-design:folder-filled",
+          "ant-design:folder-open-filled",
+          "ant-design:folder-open-outlined",
+          "ant-design:folder-open-twotone",
+          "ant-design:folder-outlined"
+        ]
+      }
+    },
+    {
+      "q": "searxh",
+      "cls": "typo-pos4+",
+      "base": "search",
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 309,
+        "ids": [
+          "tabler:search",
+          "glyphs:search",
+          "icon-park-outline:search",
+          "mynaui:search",
+          "tdesign:search",
+          "lucide:search",
+          "iconamoon:search",
+          "iconoir:search",
+          "lets-icons:search",
+          "line-md:search"
+        ]
+      },
+      "meili": {
+        "total": 1781,
+        "ids": [
+          "akar-icons:search",
+          "ant-design:search-outlined",
+          "arcticons:searchbar-ex",
+          "basil:search-outline",
+          "basil:search-solid",
+          "bi:search",
+          "bi:search-heart",
+          "bi:search-heart-fill",
+          "bitcoin-icons:search-filled",
+          "bitcoin-icons:search-outline"
+        ]
+      }
+    },
+    {
+      "q": "camra",
+      "cls": "typo-pos4+",
+      "base": "camera",
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 487,
+        "ids": [
+          "arcticons:camera",
+          "tabler:camera",
+          "glyphs:camera",
+          "icon-park-outline:camera",
+          "mynaui:camera",
+          "tdesign:camera",
+          "lucide:camera",
+          "iconoir:camera",
+          "lets-icons:camera",
+          "majesticons:camera"
+        ]
+      },
+      "meili": {
+        "total": 1559,
+        "ids": [
+          "akar-icons:camera",
+          "ant-design:camera-filled",
+          "ant-design:camera-outlined",
+          "ant-design:camera-twotone",
+          "arcticons:camaliot",
+          "arcticons:camaps-fx",
+          "arcticons:camera",
+          "arcticons:camera-data-folders",
+          "arcticons:camera-file-transfer",
+          "arcticons:camera-fv5-lite"
+        ]
+      }
+    },
+    {
+      "q": "weather",
+      "cls": "tag",
+      "base": null,
+      "filters": null,
+      "overlap": 0.2,
+      "correlation": null,
+      "shards": {
+        "total": 313,
+        "ids": [
+          "arcticons:weather",
+          "flat-ui:weather",
+          "arcticons:weather-alt",
+          "arcticons:weather-alt-2",
+          "arcticons:weather-forecast",
+          "streamline-ultimate:weather-sun",
+          "streamline-ultimate:weather-sun-bold",
+          "material-symbols:weather-mix",
+          "material-symbols-light:weather-mix",
+          "material-symbols:weather-hail"
+        ]
+      },
+      "meili": {
+        "total": 1426,
+        "ids": [
+          "arcticons:weather",
+          "flat-ui:weather",
+          "line-md:weather-cloudy-loop",
+          "mdi:weather-lightning-rainy",
+          "mdi:weather-moonset",
+          "mdi:weather-moonset-down",
+          "mdi:weather-moonset-up",
+          "mdi:weather-partly-lightning",
+          "mdi:weather-partly-rainy",
+          "mdi:weather-partly-snowy"
+        ]
+      }
+    },
+    {
+      "q": "social",
+      "cls": "tag",
+      "base": null,
+      "filters": null,
+      "overlap": 0.3,
+      "correlation": 1,
+      "shards": {
+        "total": 613,
+        "ids": [
+          "arcticons:social",
+          "tabler:social",
+          "arcticons:social-deal",
+          "tabler:social-off",
+          "material-symbols:social-distance",
+          "material-symbols-light:social-distance",
+          "arcticons:flare-social",
+          "material-symbols:social-leaderboard",
+          "material-symbols-light:social-leaderboard",
+          "thesvg-color:social-blade"
+        ]
+      },
+      "meili": {
+        "total": 5150,
+        "ids": [
+          "arcticons:social",
+          "ic:baseline-social-distance",
+          "ic:outline-social-distance",
+          "ic:round-social-distance",
+          "ic:sharp-social-distance",
+          "ic:twotone-social-distance",
+          "material-symbols-light:social-distance",
+          "material-symbols-light:social-distance-rounded",
+          "material-symbols-light:social-leaderboard",
+          "material-symbols-light:social-leaderboard-outline"
+        ]
+      }
+    },
+    {
+      "q": "media",
+      "cls": "tag",
+      "base": null,
+      "filters": null,
+      "overlap": 0.9,
+      "correlation": 0.65,
+      "shards": {
+        "total": 1277,
+        "ids": [
+          "token:media",
+          "fluent-mdl2:media",
+          "pixel:media",
+          "pajamas:media",
+          "wordpress:media",
+          "subway:media",
+          "token-branded:media",
+          "arcticons:media-picker",
+          "arcticons:media-rescan",
+          "iconoir:media-image"
+        ]
+      },
+      "meili": {
+        "total": 9829,
+        "ids": [
+          "fluent-mdl2:media",
+          "pajamas:media",
+          "pixel:media",
+          "subway:media",
+          "token-branded:media",
+          "token:media",
+          "wordpress:media",
+          "arcticons:media-picker",
+          "arcticons:media-rescan",
+          "carbon:media-cast"
+        ]
+      }
+    },
+    {
+      "q": "transport",
+      "cls": "tag",
+      "base": null,
+      "filters": null,
+      "overlap": 0.7,
+      "correlation": 0.6785714285714286,
+      "shards": {
+        "total": 547,
+        "ids": [
+          "arcticons:transport",
+          "icon-park-outline:transport",
+          "picon:transport",
+          "icon-park:transport",
+          "icon-park-solid:transport",
+          "icon-park-twotone:transport",
+          "arcticons:transport-gzm",
+          "arcticons:transportr",
+          "arcticons:smart-transport",
+          "arcticons:moscow-transport"
+        ]
+      },
+      "meili": {
+        "total": 773,
+        "ids": [
+          "arcticons:transport",
+          "icon-park-outline:transport",
+          "icon-park-solid:transport",
+          "icon-park-twotone:transport",
+          "icon-park:transport",
+          "picon:transport",
+          "arcticons:transport-gzm",
+          "thesvg-color:transport-for-ireland",
+          "thesvg-color:transport-for-london",
+          "thesvg:transport-for-ireland"
+        ]
+      }
+    },
+    {
+      "q": "business",
+      "cls": "tag",
+      "base": null,
+      "filters": null,
+      "overlap": 0.5,
+      "correlation": 0.30000000000000004,
+      "shards": {
+        "total": 462,
+        "ids": [
+          "boxicons:business",
+          "ion:business",
+          "whh:business",
+          "famicons:business",
+          "picon:business",
+          "bxs:business",
+          "pixel:business",
+          "flat-color-icons:business",
+          "arcticons:business-suite",
+          "arcticons:business-empire"
+        ]
+      },
+      "meili": {
+        "total": 2551,
+        "ids": [
+          "boxicons:business",
+          "bxs:business",
+          "fa-solid:business-time",
+          "fa6-solid:business-time",
+          "fa7-solid:business-time",
+          "famicons:business",
+          "flat-color-icons:business",
+          "ic:baseline-business",
+          "ion:business",
+          "la:business-time"
+        ]
+      }
+    },
+    {
+      "q": "food",
+      "cls": "tag",
+      "base": null,
+      "filters": null,
+      "overlap": 0.5,
+      "correlation": -0.5,
+      "shards": {
+        "total": 1060,
+        "ids": [
+          "proicons:food",
+          "mdi:food",
+          "temaki:food",
+          "pajamas:food",
+          "dashicons:food",
+          "ep:food",
+          "map:food",
+          "arcticons:food-you",
+          "material-symbols:food-bank",
+          "material-symbols-light:food-bank"
+        ]
+      },
+      "meili": {
+        "total": 7628,
+        "ids": [
+          "dashicons:food",
+          "emojione-monotone:pot-of-food",
+          "emojione-monotone:shallow-pan-of-food",
+          "emojione-v1:pot-of-food",
+          "emojione:pot-of-food",
+          "emojione:shallow-pan-of-food",
+          "ep:food",
+          "map:food",
+          "mdi:food",
+          "pajamas:food"
+        ]
+      }
+    },
+    {
+      "q": "arrow right",
+      "cls": "multi-word",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 1289,
+        "ids": [
+          "tabler:arrow-right",
+          "icon-park-outline:arrow-right",
+          "mynaui:arrow-right",
+          "tdesign:arrow-right",
+          "streamline-ultimate:arrow-right",
+          "lucide:arrow-right",
+          "iconoir:arrow-right",
+          "lets-icons:arrow-right",
+          "line-md:arrow-right",
+          "majesticons:arrow-right"
+        ]
+      },
+      "meili": {
+        "total": 11566,
+        "ids": [
+          "akar-icons:arrow-right",
+          "at-icons:arrow-right",
+          "bi:arrow-right",
+          "boxicons:arrow-right",
+          "bytesize:arrow-right",
+          "carbon:arrow-right",
+          "charm:arrow-right",
+          "cil:arrow-right",
+          "codicon:arrow-right",
+          "dashicons:arrow-right"
+        ]
+      }
+    },
+    {
+      "q": "credit card",
+      "cls": "multi-word",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 1994,
+        "ids": [
+          "tabler:credit-card",
+          "hugeicons:credit-card",
+          "glyphs:credit-card",
+          "mynaui:credit-card",
+          "lucide:credit-card",
+          "iconamoon:credit-card",
+          "iconoir:credit-card",
+          "lets-icons:credit-card",
+          "majesticons:credit-card",
+          "mage:credit-card"
+        ]
+      },
+      "meili": {
+        "total": 566,
+        "ids": [
+          "akar-icons:credit-card",
+          "bi:credit-card",
+          "boxicons:credit-card",
+          "bx:credit-card",
+          "bxs:credit-card",
+          "charm:credit-card",
+          "ci:credit-card",
+          "cil:credit-card",
+          "codicon:credit-card",
+          "duo-icons:credit-card"
+        ]
+      }
+    },
+    {
+      "q": "chevron up",
+      "cls": "multi-word",
+      "base": null,
+      "filters": null,
+      "overlap": 0.2,
+      "correlation": null,
+      "shards": {
+        "total": 1826,
+        "ids": [
+          "tabler:chevron-up",
+          "mynaui:chevron-up",
+          "tdesign:chevron-up",
+          "lucide:chevron-up",
+          "line-md:chevron-up",
+          "majesticons:chevron-up",
+          "mage:chevron-up",
+          "ci:chevron-up",
+          "proicons:chevron-up",
+          "akar-icons:chevron-up"
+        ]
+      },
+      "meili": {
+        "total": 1584,
+        "ids": [
+          "akar-icons:chevron-up",
+          "bi:chevron-up",
+          "boxicons:chevron-up",
+          "bx:chevron-up",
+          "bxs:chevron-up",
+          "carbon:chevron-up",
+          "charm:chevron-up",
+          "ci:chevron-up",
+          "codex:chevron-up",
+          "codicon:chevron-up"
+        ]
+      }
+    },
+    {
+      "q": "user circle",
+      "cls": "multi-word",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 1806,
+        "ids": [
+          "tabler:user-circle",
+          "hugeicons:user-circle",
+          "glyphs:user-circle",
+          "mynaui:user-circle",
+          "tdesign:user-circle",
+          "iconoir:user-circle",
+          "lets-icons:user-circle",
+          "lets-icons:user-cicrle",
+          "iconoir:profile-circle",
+          "arcticons:circle"
+        ]
+      },
+      "meili": {
+        "total": 2940,
+        "ids": [
+          "boxicons:user-circle",
+          "bx:user-circle",
+          "bxs:user-circle",
+          "ci:user-circle",
+          "fa-regular:user-circle",
+          "fa-solid:user-circle",
+          "fa:user-circle",
+          "fa7-regular:user-circle",
+          "fa7-solid:user-circle",
+          "glyphs-poly:user-circle"
+        ]
+      }
+    },
+    {
+      "q": "shopping cart",
+      "cls": "multi-word",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 2351,
+        "ids": [
+          "tabler:shopping-cart",
+          "glyphs:shopping-cart",
+          "icon-park-outline:shopping-cart",
+          "lucide:shopping-cart",
+          "majesticons:shopping-cart",
+          "mage:shopping-cart",
+          "material-symbols:shopping-cart",
+          "material-symbols-light:shopping-cart",
+          "ph:shopping-cart",
+          "heroicons-outline:shopping-cart"
+        ]
+      },
+      "meili": {
+        "total": 1826,
+        "ids": [
+          "at-icons:shopping-cart",
+          "carbon:shopping-cart",
+          "circum:shopping-cart",
+          "el:shopping-cart",
+          "emojione-monotone:shopping-cart",
+          "emojione:shopping-cart",
+          "entypo:shopping-cart",
+          "ep:shopping-cart",
+          "fa-solid:shopping-cart",
+          "fa:shopping-cart"
+        ]
+      }
+    },
+    {
+      "q": "play circle",
+      "cls": "multi-word",
+      "base": null,
+      "filters": null,
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 3156,
+        "ids": [
+          "hugeicons:play-circle",
+          "glyphs:play-circle",
+          "mynaui:play-circle",
+          "tdesign:play-circle",
+          "iconamoon:play-circle",
+          "majesticons:play-circle",
+          "mage:play-circle",
+          "material-symbols:play-circle",
+          "material-symbols-light:play-circle",
+          "ci:play-circle"
+        ]
+      },
+      "meili": {
+        "total": 1497,
+        "ids": [
+          "bi:play-circle",
+          "boxicons:play-circle",
+          "bx:play-circle",
+          "ci:play-circle",
+          "codicon:play-circle",
+          "el:play-circle",
+          "f7:play-circle",
+          "fa-regular:play-circle",
+          "fa-solid:play-circle",
+          "fa:play-circle"
+        ]
+      }
+    },
+    {
+      "q": "arrow left",
+      "cls": "multi-word",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 2075,
+        "ids": [
+          "tabler:arrow-left",
+          "icon-park-outline:arrow-left",
+          "mynaui:arrow-left",
+          "tdesign:arrow-left",
+          "lucide:arrow-left",
+          "iconoir:arrow-left",
+          "lets-icons:arrow-left",
+          "line-md:arrow-left",
+          "majesticons:arrow-left",
+          "mage:arrow-left"
+        ]
+      },
+      "meili": {
+        "total": 11565,
+        "ids": [
+          "akar-icons:arrow-left",
+          "at-icons:arrow-left",
+          "bi:arrow-left",
+          "boxicons:arrow-left",
+          "bytesize:arrow-left",
+          "carbon:arrow-left",
+          "charm:arrow-left",
+          "cil:arrow-left",
+          "codicon:arrow-left",
+          "dashicons:arrow-left"
+        ]
+      }
+    },
+    {
+      "q": "file text",
+      "cls": "multi-word",
+      "base": null,
+      "filters": null,
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 3383,
+        "ids": [
+          "tabler:file-text",
+          "icon-park-outline:file-text",
+          "mynaui:file-text",
+          "line-md:text-box",
+          "si:text-fill",
+          "tdesign:tea-filled",
+          "arcticons:file",
+          "tabler:file",
+          "hugeicons:text",
+          "glyphs:file"
+        ]
+      },
+      "meili": {
+        "total": 16179,
+        "ids": [
+          "bi:file-text",
+          "codicon:file-text",
+          "fa:file-text",
+          "fa7-regular:file-text",
+          "fa7-solid:file-text",
+          "feather:file-text",
+          "gala:file-text",
+          "gravity-ui:file-text",
+          "griddy-icons:file-text",
+          "icomoon-free:file-text"
+        ]
+      }
+    },
+    {
+      "q": "arrow",
+      "cls": "set-scoped",
+      "base": null,
+      "filters": {
+        "prefix": "tabler"
+      },
+      "overlap": 0,
+      "correlation": null,
+      "shards": {
+        "total": 158,
+        "ids": [
+          "tabler:arrow-up",
+          "tabler:arrow-back",
+          "tabler:arrow-down",
+          "tabler:arrow-fork",
+          "tabler:arrow-left",
+          "tabler:arrow-guide",
+          "tabler:arrow-merge",
+          "tabler:arrow-right",
+          "tabler:arrow-bar-up",
+          "tabler:arrow-big-up"
+        ]
+      },
+      "meili": {
+        "total": 273,
+        "ids": [
+          "tabler:arrow-autofit-content",
+          "tabler:arrow-autofit-content-filled",
+          "tabler:arrow-autofit-down",
+          "tabler:arrow-autofit-down-filled",
+          "tabler:arrow-autofit-height",
+          "tabler:arrow-autofit-height-filled",
+          "tabler:arrow-autofit-left",
+          "tabler:arrow-autofit-left-filled",
+          "tabler:arrow-autofit-right",
+          "tabler:arrow-autofit-right-filled"
+        ]
+      }
+    },
+    {
+      "q": "star",
+      "cls": "set-scoped",
+      "base": null,
+      "filters": {
+        "prefix": "material-symbols"
+      },
+      "overlap": 0.4,
+      "correlation": 0.8,
+      "shards": {
+        "total": 159,
+        "ids": [
+          "material-symbols:star",
+          "material-symbols:star-half",
+          "material-symbols:star-rate",
+          "material-symbols:star-shine",
+          "material-symbols:star-outline",
+          "material-symbols:star-rounded",
+          "material-symbols:stars",
+          "material-symbols:start",
+          "material-symbols:stars-2",
+          "material-symbols:stars-outline"
+        ]
+      },
+      "meili": {
+        "total": 6972,
+        "ids": [
+          "material-symbols:star",
+          "material-symbols:star-half",
+          "material-symbols:star-half-rounded",
+          "material-symbols:star-outline",
+          "material-symbols:star-outline-rounded",
+          "material-symbols:star-rate",
+          "material-symbols:star-rate-half",
+          "material-symbols:star-rate-half-rounded",
+          "material-symbols:star-rate-outline",
+          "material-symbols:star-rate-outline-rounded"
+        ]
+      }
+    },
+    {
+      "q": "user",
+      "cls": "set-scoped",
+      "base": null,
+      "filters": {
+        "prefix": "lucide"
+      },
+      "overlap": 0.6,
+      "correlation": 0.6571428571428571,
+      "shards": {
+        "total": 16,
+        "ids": [
+          "lucide:user",
+          "lucide:user-x",
+          "lucide:user-cog",
+          "lucide:user-key",
+          "lucide:user-pen",
+          "lucide:user-lock",
+          "lucide:user-plus",
+          "lucide:user-star",
+          "lucide:user-check",
+          "lucide:user-minus"
+        ]
+      },
+      "meili": {
+        "total": 31,
+        "ids": [
+          "lucide:user",
+          "lucide:circle-user",
+          "lucide:circle-user-round",
+          "lucide:square-user",
+          "lucide:square-user-round",
+          "lucide:user-check",
+          "lucide:user-cog",
+          "lucide:user-key",
+          "lucide:user-lock",
+          "lucide:user-minus"
+        ]
+      }
+    },
+    {
+      "q": "calendar",
+      "cls": "set-scoped",
+      "base": null,
+      "filters": {
+        "prefix": "mdi"
+      },
+      "overlap": 0.1,
+      "correlation": null,
+      "shards": {
+        "total": 3,
+        "ids": [
+          "mdi:calendar",
+          "mdi:calendar-multiple",
+          "mdi:calendar-multiple-check"
+        ]
+      },
+      "meili": {
+        "total": 81,
+        "ids": [
+          "mdi:calendar",
+          "mdi:calendar-account",
+          "mdi:calendar-account-outline",
+          "mdi:calendar-alert",
+          "mdi:calendar-alert-outline",
+          "mdi:calendar-arrow-left",
+          "mdi:calendar-arrow-right",
+          "mdi:calendar-badge",
+          "mdi:calendar-badge-outline",
+          "mdi:calendar-blank"
+        ]
+      }
+    },
+    {
+      "q": "home",
+      "cls": "set-scoped",
+      "base": null,
+      "filters": {
+        "prefix": "ph"
+      },
+      "overlap": 1,
+      "correlation": null,
+      "shards": {
+        "total": 0,
+        "ids": []
+      },
+      "meili": {
+        "total": 0,
+        "ids": []
+      }
+    },
+    {
+      "q": "settings",
+      "cls": "set-scoped",
+      "base": null,
+      "filters": {
+        "prefix": "carbon"
+      },
+      "overlap": 0.4,
+      "correlation": 0.4,
+      "shards": {
+        "total": 4,
+        "ids": [
+          "carbon:settings",
+          "carbon:settings-edit",
+          "carbon:settings-view",
+          "carbon:settings-check"
+        ]
+      },
+      "meili": {
+        "total": 13,
+        "ids": [
+          "carbon:settings",
+          "carbon:settings-adjust",
+          "carbon:settings-check",
+          "carbon:settings-edit",
+          "carbon:settings-services",
+          "carbon:settings-view",
+          "carbon:calendar-settings",
+          "carbon:delivery-settings",
+          "carbon:phone-settings",
+          "carbon:sync-settings"
+        ]
+      }
+    }
+  ],
+  "gaps": [
+    {
+      "query": "aettings",
+      "base": "settings",
+      "cls": "typo-pos1-2",
+      "typoBucket": "ae",
+      "baseBucket": "set",
+      "cause": "first-two-character routing",
+      "shardHits": 0,
+      "meiliHits": 60
+    },
+    {
+      "query": "xalendar",
+      "base": "calendar",
+      "cls": "typo-pos1-2",
+      "typoBucket": "xa",
+      "baseBucket": "cal",
+      "cause": "first-two-character routing",
+      "shardHits": 0,
+      "meiliHits": 60
+    },
+    {
+      "query": "aearch",
+      "base": "search",
+      "cls": "typo-pos1-2",
+      "typoBucket": "ae",
+      "baseBucket": "sea",
+      "cause": "first-two-character routing",
+      "shardHits": 0,
+      "meiliHits": 6
+    },
+    {
+      "query": "hrart",
+      "base": "heart",
+      "cls": "typo-pos1-2",
+      "typoBucket": "hr",
+      "baseBucket": "hea",
+      "cause": "first-two-character routing",
+      "shardHits": 2,
+      "meiliHits": 60
+    },
+    {
+      "query": "artow",
+      "base": "arrow",
+      "cls": "typo-pos3",
+      "typoBucket": "ar",
+      "baseBucket": "ar",
+      "cause": "in-bucket scoring",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "cakendar",
+      "base": "calendar",
+      "cls": "typo-pos3",
+      "typoBucket": "cak",
+      "baseBucket": "cal",
+      "cause": "split-bucket routing",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "trssh",
+      "base": "trash",
+      "cls": "typo-pos3",
+      "typoBucket": "tr_",
+      "baseBucket": "tra",
+      "cause": "split-bucket routing",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "fokder",
+      "base": "folder",
+      "cls": "typo-pos3",
+      "typoBucket": "fok",
+      "baseBucket": "fol",
+      "cause": "split-bucket routing",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "sesrch",
+      "base": "search",
+      "cls": "typo-pos3",
+      "typoBucket": "ses",
+      "baseBucket": "sea",
+      "cause": "split-bucket routing",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "trsh",
+      "base": "trash",
+      "cls": "typo-pos3",
+      "typoBucket": "tr_",
+      "baseBucket": "tra",
+      "cause": "split-bucket routing",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "arroe",
+      "base": "arrow",
+      "cls": "typo-pos4+",
+      "typoBucket": "ar",
+      "baseBucket": "ar",
+      "cause": "in-bucket scoring",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "calemdar",
+      "base": "calendar",
+      "cls": "typo-pos4+",
+      "typoBucket": "cal",
+      "baseBucket": "cal",
+      "cause": "in-bucket scoring",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "trasj",
+      "base": "trash",
+      "cls": "typo-pos4+",
+      "typoBucket": "tra",
+      "baseBucket": "tra",
+      "cause": "in-bucket scoring",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "foldrr",
+      "base": "folder",
+      "cls": "typo-pos4+",
+      "typoBucket": "fol",
+      "baseBucket": "fol",
+      "cause": "in-bucket scoring",
+      "shardHits": 60,
+      "meiliHits": 60
+    },
+    {
+      "query": "searxh",
+      "base": "search",
+      "cls": "typo-pos4+",
+      "typoBucket": "sea",
+      "baseBucket": "sea",
+      "cause": "in-bucket scoring",
+      "shardHits": 60,
+      "meiliHits": 60
+    }
+  ],
+  "termMapCost": {
+    "files": 36,
+    "terms": 12964,
+    "bytes": 219885
+  }
+}

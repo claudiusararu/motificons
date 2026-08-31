@@ -1,0 +1,14 @@
+{
+  "name": "motificons",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "sync-icons": "pnpm --filter pipeline run sync",
+    "dev": "pnpm --filter app run dev",
+    "build": "pnpm --filter app run build",
+    "check": "pnpm --filter app run check && pnpm --filter pipeline run check",
+    "spike:s1": "pnpm --filter pipeline run spike:s1",
+    "build-shards": "pnpm --filter pipeline run build-shards",
+    "publish-data": "pnpm --filter pipeline run publish-data"
+  }
+}

@@ -1,0 +1,174 @@
+---
+import "../styles/global.css";
+import { DEFAULT_OG_IMAGE, SITE_ORIGIN, absolute, siteSchema } from "../lib/seo";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Path only; the absolute canonical is built from it. Defaults to this URL's path. */
+  canonicalPath?: string;
+  /** Absolute image URL. Falls back to the site-wide card. */
+  ogImage?: string;
+  /** Pixel dimensions of `ogImage`, when known - social crawlers can render
+      without fetching the image first if these are present. Omitted by
+      default rather than defaulting to the site card's size, since a page
+      that overrides `ogImage` without also overriding these would otherwise
+      advertise the wrong dimensions for its actual image. */
+  ogImageWidth?: number;
+  ogImageHeight?: number;
+  ogType?: "website" | "article";
+  /** Metered or thin surfaces ask robots not to index them. */
+  noindex?: boolean;
+  /** Load PostHog product analytics on this page (default true). Set false on
+      the ~337k individual icon pages: their per-navigation pageviews are pure
+      noise in PostHog's person/funnel views and would swamp the signal. Ahrefs
+      (aggregate traffic) still loads there - that volume is a useful SEO read. */
+  posthog?: boolean;
+  /** Extra classes for <body>, e.g. a full-white page. */
+  bodyClass?: string;
+}
+
+const {
+  title,
+  description,
+  canonicalPath,
+  ogImage = DEFAULT_OG_IMAGE,
+  ogImageWidth,
+  ogImageHeight,
+  ogType = "website",
+  noindex = false,
+  posthog = true,
+  bodyClass,
+} = Astro.props;
+
+/* Built from the path, never from the request URL, so query strings and
+   tracking params cannot fork the canonical. */
+const canonical = absolute(canonicalPath ?? Astro.url.pathname);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    {/* Anti-flash: reads the shared `mfc-ent` cache
+        (entitlements-cache.ts) synchronously, before first paint, so a
+        returning signed-in visitor's UI can start in the right state
+        instead of always the signed-out default. Display only - every
+        account-owned resource is still resolved server-side regardless of
+        this class. */}
+    <script is:inline>
+      try {
+        const raw = localStorage.getItem("mfc-ent");
+        const data = raw && JSON.parse(raw);
+        if (data && Date.now() - data.t < 86400000) {
+          if (data.signedIn) document.documentElement.classList.add("ent-in");
+        }
+      } catch {}
+    </script>
+
+    {/* Chip + star, the same mark as the header logo. */}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
+    <meta property="og:site_name" content="Motificons" />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    {ogImageWidth && <meta property="og:image:width" content={String(ogImageWidth)} />}
+    {ogImageHeight && <meta property="og:image:height" content={String(ogImageHeight)} />}
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    {description && <meta name="twitter:description" content={description} />}
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="sitemap" type="application/xml" href={`${SITE_ORIGIN}/sitemap.xml`} />
+
+    {/* Organization + WebSite/SearchAction, site-wide - see siteSchema()'s
+        own comment for why it's one block rather than one per page. */}
+    <script type="application/ld+json" is:inline set:html={siteSchema()} />
+
+    {/* Analytics - production builds ONLY. `import.meta.env.PROD` is
+        Vite/Astro's own build-time flag (false for every `astro dev`
+        session, true for `astro build`), so nothing here ships, runs, or phones home while
+        developing locally; verified by grepping dist/ vs a dev response for
+        these hosts. */}
+    {import.meta.env.PROD && (
+      <>
+        {posthog && (
+        <>
+        {/* PostHog (EU host) - pageviews + autocapture. Official array.js
+            async loader, reproduced verbatim from
+            https://posthog.com/docs/libraries/js (not hand-abridged - the
+            obfuscated method-name list is exactly what PostHog ships).
+            Identify/reset happen client-side after sign-in
+            (entitlements-cache.ts's writeCached, plus the two sign-out call
+            sites), keyed on the account email so a person merges across an
+            anonymous browsing session and their eventual account. */}
+        <script is:inline>
+          !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+          posthog.init('phc_oNt7e6CtQFyn363XoqvkNWgj8aSyYBA3LDBUD7PoGXiW', { api_host: 'https://eu.i.posthog.com', defaults: '2026-05-30', person_profiles: 'identified_only' })
+        </script>
+        </>
+        )}
+
+        {/* Ahrefs site analytics - same production-only guard as PostHog
+            above (loads on every page, including icon pages - aggregate
+            traffic is a useful SEO signal even where PostHog is skipped). */}
+        <script src="https://analytics.ahrefs.com/analytics.js" data-key="0Ml6LQpBWbrCs52JzCdY+A" async is:inline></script>
+      </>
+    )}
+  </head>
+  <body class={bodyClass}>
+    {/* Skip link - the first focusable element on every page. Pages must carry
+        id="main" on their main landmark for it to land. */}
+    <a class="skip-link" href="#main">Skip to content</a>
+    <slot />
+
+    {/* Generic "dismiss and remember" for any small in-page note - the
+        dashboard get-started card and the collection page's guidance banner
+        both use this instead of a bespoke script each (Banner.astro's own
+        announcement-banner dismiss has its own copy of this same idea, kept
+        separate since it predates this generic one and nothing forces the
+        two to merge). One flag per `data-dismiss-key`, so unrelated notes
+        never collide; inert (does nothing) on every page that has no
+        `data-dismissible` element, which is most of them. */}
+    <script>
+      document.querySelectorAll<HTMLElement>("[data-dismissible]").forEach((el) => {
+        const key = el.dataset["dismissKey"];
+        if (!key) return;
+
+        try {
+          if (localStorage.getItem(key)) {
+            el.remove();
+            return;
+          }
+        } catch {
+          /* Storage disabled/unavailable - show it every time rather than
+             hide it forever. */
+        }
+
+        el.querySelector<HTMLButtonElement>("[data-dismiss-button]")?.addEventListener(
+          "click",
+          () => {
+            try {
+              localStorage.setItem(key, "1");
+            } catch {
+              /* best-effort - see above */
+            }
+            el.remove();
+          },
+        );
+      });
+    </script>
+  </body>
+</html>

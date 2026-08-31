@@ -1,0 +1,330 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Button from "../../components/Button.astro";
+import IconTile from "../../components/IconTile.astro";
+import Pill from "../../components/Pill.astro";
+import TileStars from "../../components/react/TileStars";
+import { getCategory, getSet } from "../../lib/data";
+import { categoryIcons } from "../../lib/related";
+import { breadcrumbSchema } from "../../lib/seo";
+
+/* SSR with a shared cache, like the set pages and for the same reason: the
+   grid reads the live index. Prerendering all 477 would couple the build to a
+   running Meilisearch for pages that change whenever the library is re-synced.
+   They stay static-feeling behind the cache, crawlable and unmetered. */
+export const prerender = false;
+
+const { slug = "" } = Astro.params;
+const category = await getCategory(slug);
+if (!category) return await Astro.rewrite("/404");
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800",
+);
+
+const { hits, total } = await categoryIcons(category.slug, 120);
+/* Every contributing set, not just the first page of pills - the largest
+   category tops out at 27 (pipeline/dist/categories.json), so fetching all
+   of them is cheap, and it is what lets "+N more" below expand the real
+   list in place instead of needing a second round trip. */
+const allSets = (
+  await Promise.all(category.sets.map((prefix) => getSet(prefix)))
+).filter((set) => set !== null);
+
+const VISIBLE_SET_PILLS = 6;
+const visibleSets = allSets.slice(0, VISIBLE_SET_PILLS);
+const extraSets = allSets.slice(VISIBLE_SET_PILLS);
+
+/** A pill's target: this set's icons WITHIN this category, not the bare set
+    page - clicking "Tabler" from the "Arrows" category should not drop the
+    "Arrows" part, the two filters compose on /search. */
+const setSearchHref = (prefix: string) =>
+  `/search?category=${encodeURIComponent(category.slug)}&sets=${encodeURIComponent(prefix)}`;
+
+const count = category.icons.toLocaleString("en-US");
+
+/* Same trail the visible breadcrumb nav below renders. */
+const breadcrumbs = breadcrumbSchema([
+  { name: "Categories", path: "/categories" },
+  { name: category.tag, path: `/category/${slug}` },
+]);
+---
+
+<Layout
+  title={`${category.tag} icons - ${count} free ${category.tag.toLowerCase()} icons`}
+  description={`Browse ${count} free ${category.tag} icons from ${category.sets.length} open-source sets. Download as SVG or PNG, copy as JSX or SwiftUI. No account needed.`}
+  canonicalPath={`/category/${slug}`}
+>
+  <Header active="categories" />
+
+  <script type="application/ld+json" is:inline set:html={breadcrumbs} />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <nav aria-label="Breadcrumb" class="pt-8 text-meta text-ink-muted">
+        <a href="/categories" class="prose-link">Categories</a>
+        <span aria-hidden="true"> / </span>
+        <span>{category.tag}</span>
+      </nav>
+
+      <h1 class="mt-6 text-h1 font-bold">{category.tag} icons</h1>
+
+      <p class="mt-4 text-ink-muted">
+        {count} {category.tag} icons drawn by {category.sets.length}{" "}
+        {category.sets.length === 1 ? "set" : "different sets"}, so you can pick
+        the weight and personality that fits rather than taking whatever one
+        library decided. Every icon here is free to download as SVG or PNG, and
+        browsing is never metered.
+      </p>
+
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        {
+          visibleSets.map((set) => (
+            <Pill href={setSearchHref(set.prefix)} variant="blue">
+              {set.name}
+            </Pill>
+          ))
+        }
+        {
+          /* Each extra pill sits in its own bare, class-free wrapper so the
+             `hidden` attribute has nothing fighting it for `display` -
+             Pill itself renders `inline-flex`, and pairing that directly
+             with `hidden` on the same element is the exact conflict
+             Header.astro's own nav-icon toggle comment already flags in
+             this codebase (an author-layer `inline-flex` utility beats the
+             base-layer `[hidden]` rule). The wrapper carries no class of its
+             own, so there is nothing to fight. */
+          extraSets.map((set, index) => (
+            <span id={`category-extra-set-${index}`} hidden data-category-extra-set>
+              <Pill href={setSearchHref(set.prefix)} variant="blue">
+                {set.name}
+              </Pill>
+            </span>
+          ))
+        }
+        {
+          extraSets.length > 0 && (
+            <button
+              type="button"
+              id="category-sets-toggle"
+              aria-expanded="false"
+              aria-controls={extraSets.map((_, index) => `category-extra-set-${index}`).join(" ")}
+              class="press-lift touch-target-inset inline-flex items-center gap-1.5 rounded-tag bg-pill-gray px-3 py-1.5 text-pill font-bold text-ink uppercase [--press-shadow-color:var(--color-card-shadow)]"
+            >
+              <span id="category-sets-toggle-label">+{extraSets.length} more</span>
+            </button>
+          )
+        }
+      </div>
+
+      <div class="mt-8">
+        <Button href={`/search?category=${encodeURIComponent(category.slug)}`}>
+          Search in this category
+        </Button>
+      </div>
+
+      <section class="mt-12">
+        <h2 class="sr-only">{category.tag} icons</h2>
+        {
+          hits.length > 0 ? (
+            <div
+              id="category-icon-grid"
+              class="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-3"
+            >
+              {hits.map((item) => (
+                <div class="group relative">
+                  <IconTile name={item.name} href={`/${item.prefix}/${item.name}`}>
+                    {item.body ? (
+                      <svg
+                        width="30"
+                        height="30"
+                        viewBox={`0 0 ${item.width} ${item.height}`}
+                        aria-hidden="true"
+                        set:html={item.body}
+                      />
+                    ) : (
+                      <img
+                        src={`/api/icon/${item.prefix}/${item.name}.svg`}
+                        width="30"
+                        height="30"
+                        alt=""
+                        loading="lazy"
+                      />
+                    )}
+                  </IconTile>
+                  {/* Empty sibling placeholder, not a child of the tile's own
+                      `<a>` - TileStars.tsx portals the real, interactive
+                      quick-save star into it client-side. See that
+                      component's own doc comment for why a sibling. */}
+                  <span data-star-slot={`${item.prefix}:${item.name}`} data-star-name={item.name} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p class="rounded-card bg-surface px-8 py-7 text-meta text-ink-muted shadow-card">
+              This category could not be loaded right now. Try{" "}
+              <a href="/categories" class="prose-link">
+                the category index
+              </a>{" "}
+              or{" "}
+              <a href="/search" class="prose-link">
+                browse by set
+              </a>
+              .
+            </p>
+          )
+        }
+
+        {
+          total > hits.length && (
+            <div class="mt-8 flex flex-col items-center gap-3">
+              <button
+                type="button"
+                id="category-load-more"
+                data-category={category.slug}
+                data-offset={hits.length}
+                data-total={total}
+                class="press inline-flex items-center justify-center rounded-btn border-2 border-ink bg-surface px-6 py-[15px] text-body font-semibold text-ink"
+              >
+                Load more
+              </button>
+              <p
+                class="text-meta text-ink-muted"
+                id="category-load-status"
+                role="status"
+                aria-live="polite"
+              >
+                Showing {hits.length.toLocaleString("en-US")} of {count}
+              </p>
+            </div>
+          )
+        }
+
+        {hits.length > 0 && <TileStars client:load gridSelector="#category-icon-grid" />}
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script>
+  /* "+N more" - a real control, never a dead click: expands the rest of the
+     contributing sets in place, already server-rendered and just hidden -
+     no second fetch. Toggles both directions, unlike a one-shot "load more". */
+  const toggle = document.getElementById("category-sets-toggle");
+  const label = document.getElementById("category-sets-toggle-label");
+  const extras = document.querySelectorAll<HTMLElement>("[data-category-extra-set]");
+  const moreCount = extras.length;
+
+  if (toggle instanceof HTMLButtonElement && moreCount > 0) {
+    toggle.addEventListener("click", () => {
+      const expanded = toggle.getAttribute("aria-expanded") === "true";
+      const next = !expanded;
+      extras.forEach((el) => {
+        el.hidden = !next;
+      });
+      toggle.setAttribute("aria-expanded", String(next));
+      if (label) {
+        label.textContent = next ? "Show fewer" : `+${moreCount} more`;
+      }
+    });
+  }
+</script>
+
+<script>
+  /* Load more - browse mode against
+     /api/search (category filter, empty q), same script shape as the set
+     page's own load-more ([prefix]/index.astro). Each appended tile carries
+     the same relative-wrapper + checkerboard glyph + star-slot placeholder
+     the server-rendered ones above do, then dispatches
+     "motificons:tiles-appended" so TileStars.tsx (mounted once on this page)
+     re-scans and portals a star into the new slots too. */
+  const button = document.querySelector<HTMLButtonElement>("#category-load-more");
+  const grid = document.querySelector<HTMLElement>("#category-icon-grid");
+  const status = document.querySelector<HTMLElement>("#category-load-status");
+
+  button?.addEventListener("click", async () => {
+    const category = button.dataset["category"]!;
+    const offset = Number(button.dataset["offset"]);
+    const total = Number(button.dataset["total"]);
+
+    button.disabled = true;
+    button.textContent = "Loading";
+
+    try {
+      const response = await fetch(
+        `/api/search?category=${encodeURIComponent(category)}&limit=100&offset=${offset}`,
+      );
+      const payload = await response.json();
+      if (payload.limited || !payload.hits) throw new Error("no results");
+
+      for (const hit of payload.hits) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "group relative";
+
+        const tile = document.createElement("a");
+        tile.href = `/${hit.prefix}/${hit.name}`;
+        tile.title = hit.name;
+        tile.setAttribute("aria-label", hit.name);
+        tile.className =
+          "press-lift relative flex min-w-[96px] flex-col items-center gap-3 rounded-card bg-surface px-3 py-5 text-center no-underline";
+
+        const glyph = document.createElement("span");
+        glyph.className = "flex h-8 items-center justify-center text-ink glyph-checker";
+        if (hit.body) {
+          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svg.setAttribute("width", "30");
+          svg.setAttribute("height", "30");
+          svg.setAttribute("viewBox", `0 0 ${hit.width} ${hit.height}`);
+          svg.setAttribute("aria-hidden", "true");
+          svg.innerHTML = hit.body;
+          glyph.appendChild(svg);
+        } else {
+          const img = document.createElement("img");
+          img.src = `/api/icon/${hit.prefix}/${hit.name}.svg`;
+          img.width = 30;
+          img.height = 30;
+          img.alt = "";
+          img.loading = "lazy";
+          glyph.appendChild(img);
+        }
+
+        const label = document.createElement("span");
+        label.className = "w-full truncate text-meta text-ink-muted";
+        label.textContent = hit.name;
+
+        tile.append(glyph, label);
+
+        const starSlot = document.createElement("span");
+        starSlot.dataset["starSlot"] = `${hit.prefix}:${hit.name}`;
+        starSlot.dataset["starName"] = hit.name;
+
+        wrapper.append(tile, starSlot);
+        grid?.appendChild(wrapper);
+      }
+
+      const shown = offset + payload.hits.length;
+      button.dataset["offset"] = String(shown);
+      if (status) {
+        status.textContent = `Showing ${shown.toLocaleString("en-US")} of ${total.toLocaleString("en-US")}`;
+      }
+
+      document.dispatchEvent(new CustomEvent("motificons:tiles-appended"));
+
+      if (shown >= total || payload.hits.length === 0) {
+        button.remove();
+      } else {
+        button.disabled = false;
+        button.textContent = "Load more";
+      }
+    } catch {
+      button.disabled = false;
+      button.textContent = "Load more";
+      if (status) status.textContent = "Could not load more icons. Try again.";
+    }
+  });
+</script>

@@ -1,0 +1,58 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+export type PillVariant = "yellow" | "blue" | "teal" | "gray" | "blueDeep";
+
+interface Props extends HTMLAttributes<"span"> {
+  variant?: PillVariant;
+  /** Renders an <a>: tag pills link to their category page. */
+  href?: string;
+  external?: boolean;
+}
+
+const {
+  variant = "yellow",
+  href,
+  external = false,
+  class: className,
+  // Consumed by the parent for slot placement; must not reach the DOM.
+  slot,
+  ...rest
+} = Astro.props;
+
+/* Pills / tags. Yellow = style/set family, blue = category,
+   teal = alias/related, gray = version numbers.
+   Text is ink on every LIGHT fill, which is what the "text on accents = ink"
+   rule is about. blueDeep is a dark fill, so it takes white: ink on #146EBE
+   would be 1.8:1, while white is 5.2:1 and passes AA. */
+const VARIANTS: Record<PillVariant, string> = {
+  yellow: "bg-primary text-ink [--press-shadow-color:var(--color-primary-deep)]",
+  blue: "bg-blue text-ink [--press-shadow-color:var(--color-blue-deep)]",
+  teal: "bg-teal text-ink [--press-shadow-color:var(--color-teal-deep)]",
+  gray: "bg-pill-gray text-ink [--press-shadow-color:var(--color-card-shadow)]",
+  blueDeep: "bg-blue-deep text-white [--press-shadow-color:#1864AB]",
+};
+
+const Tag = href ? "a" : "span";
+const tagAttrs = href
+  ? {
+      href,
+      ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
+    }
+  : {};
+---
+
+<Tag
+  {...tagAttrs}
+  {...rest}
+  class:list={[
+    "inline-flex items-center gap-1.5 rounded-tag px-3 py-1.5 text-pill font-bold uppercase no-underline",
+    VARIANTS[variant],
+    /* Linked pills keep their 28px look and grow only the hit area on touch,
+       so dense tag groups stay dense. */
+    href && "press-lift touch-target-inset",
+    className,
+  ]}
+>
+  <slot />
+</Tag>

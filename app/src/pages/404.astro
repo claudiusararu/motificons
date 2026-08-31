@@ -1,0 +1,55 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Button from "../components/Button.astro";
+
+/*
+ * Site-wide 404 - the only "not found" page on a 618k-URL site. Astro serves
+ * this automatically for a path that matches no route at all, with a 404
+ * status it derives from the route name (no explicit status needed here).
+ *
+ * Routes that DO match a pattern but resolve to nothing real (a bad icon
+ * slug, a bad set prefix, a bad collection id) do not get this for free -
+ * each of those handlers calls `Astro.rewrite("/404")` explicitly so the
+ * same branded page renders there too, still carrying a 404 status.
+ *
+ * `prerender = false`, deliberately not the static default: those handlers
+ * are themselves on-demand (`prerender = false`, since a bad icon/set/
+ * collection id can only be known at request time), and Astro refuses to
+ * rewrite an on-demand route to a prerendered one - the target would already
+ * be a static HTML file baked at build time, unreachable at runtime. This
+ * page has nothing request-specific in it, so rendering it on demand costs
+ * nothing meaningful; it stays reachable both ways (a genuinely unmatched
+ * path still gets it automatically, with the same 404 status).
+ */
+export const prerender = false;
+---
+
+<Layout
+  title="Page not found - Motificons"
+  description="This page does not exist. Browse the icon library or head back to the homepage."
+  noindex
+>
+  <Header />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <div class="flex flex-col items-start gap-5 pt-24 pb-8">
+        <p class="text-pill font-bold text-ink-muted uppercase">404</p>
+        <h1 class="text-h1 font-bold">This page does not exist.</h1>
+        <p class="text-ink-muted">
+          The link may be old, or the address may be mistyped. Everything
+          else on the site is right where it should be.
+        </p>
+
+        <div class="mt-4 flex flex-wrap items-center gap-4">
+          <Button href="/search">Browse the icon library</Button>
+          <Button variant="secondary" href="/">Go to the homepage</Button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

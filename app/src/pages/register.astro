@@ -1,0 +1,107 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Card from "../components/Card.astro";
+import Icon from "../components/Icon.astro";
+import AuthCard from "../components/react/AuthCard";
+import { configuredProviders } from "../lib/auth/auth";
+import { turnstileConfig } from "../lib/auth/turnstile";
+
+/*
+ * Sign-up. Accounts are free, so this is a real form: it renders the same
+ * AuthCard /sign-in renders, in "register" mode - a magic link or an OAuth
+ * button creates the account and signs the person in with one action either
+ * way, so the difference is what the card promises, not what it does.
+ *
+ * This door always sends: an email that already has an account just gets
+ * signed in by the link. Only /sign-in answers "no account yet" (see
+ * lib/auth/magic-link-guard.ts).
+ *
+ * SSR (not prerendered) to redirect an already-signed-in visitor straight
+ * past it, and to read the server-checked provider env vars before deciding
+ * which OAuth buttons exist at all - same as /sign-in.
+ */
+export const prerender = false;
+
+if (Astro.locals.user) {
+  return Astro.redirect("/dashboard");
+}
+
+const providers = await configuredProviders();
+/* Site key is public by design; the secret half never leaves the server. */
+const { siteKey: turnstileSiteKey } = await turnstileConfig();
+
+/* Prefill from the "create one?" hand-off on /sign-in, so the visitor does
+   not retype the address they just typed. Trimmed and length-capped because
+   it is a URL parameter; the form validates it as an email either way. */
+const prefillEmail = (Astro.url.searchParams.get("email") ?? "")
+  .trim()
+  .slice(0, 254);
+---
+
+<Layout
+  title="Create your free account - Motificons"
+  description="A free Motificons account adds collections, unlimited search and an MCP key for your coding agent."
+  noindex
+>
+  <Header />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <div class="mx-auto w-full max-w-[440px] py-16">
+        <div class="mb-8 text-center">
+          <span class="mx-auto flex size-14 items-center justify-center rounded-full border-2 border-ink bg-primary">
+            <Icon name="sparkle" size={24} class="text-ink" />
+          </span>
+          <h1 class="mt-6 text-h2 font-bold">Create your free account</h1>
+          <p class="mt-2 text-body text-ink-muted">
+            No card, no trial, nothing to buy. Everything else on Motificons
+            already works without an account - this is for the parts that
+            have to belong to somebody.
+          </p>
+        </div>
+
+        <Card>
+          <AuthCard
+            client:load
+            mode="register"
+            providers={providers}
+            callbackURL="/dashboard"
+            turnstileSiteKey={turnstileSiteKey}
+            initialEmail={prefillEmail}
+          />
+        </Card>
+
+        <Card class="mt-8 text-left">
+          <ul class="flex flex-col gap-3 text-body text-ink">
+            <li class="flex items-start gap-3">
+              <Icon name="check" size={20} class="mt-0.5 shrink-0 text-teal-deep" />
+              5 collections, styled and exported your way
+            </li>
+            <li class="flex items-start gap-3">
+              <Icon name="check" size={20} class="mt-0.5 shrink-0 text-teal-deep" />
+              Unlimited search, with no daily allowance
+            </li>
+            <li class="flex items-start gap-3">
+              <Icon name="check" size={20} class="mt-0.5 shrink-0 text-teal-deep" />
+              An MCP key, so your coding agent uses your icons too
+            </li>
+          </ul>
+        </Card>
+
+        <p class="mt-6 text-center text-meta text-ink-muted">
+          Already have an account?{" "}
+          <a
+            href="/sign-in"
+            class="font-semibold text-blue-deep underline underline-offset-2"
+          >
+            Sign in
+          </a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

@@ -1,0 +1,96 @@
+---
+/**
+ * Placeholder icon set - 24x24 strokes on currentColor by default,
+ * deliberately tiny.
+ *
+ * STANDING RULE: any glyph this site needs is sourced
+ * from the library's own pipeline data (pipeline/dist/bodies/<prefix>.jsonl
+ * + its .index.json), never hand-drawn - we ship 337k real icons, there is
+ * no excuse for a custom-drawn one. Most entries below predate this rule and
+ * are still hand-drawn originals; `brush` is the first sourced this way
+ * (el:brush, a filled glyph on its own native 1200x1200 grid - hence the
+ * object form below instead of a bare string: this component's <svg> can no
+ * longer assume every source icon shares the placeholder set's 24x24/stroke
+ * conventions) and is the template for the next one - pull the real body
+ * from the pipeline; a plain string entry still works for anything that
+ * really is a 24x24 stroke path, `{ body, viewBox }` covers everything else.
+ */
+export const ICONS = {
+  search: '<circle cx="11" cy="11" r="7" /><path d="m16.5 16.5 4.5 4.5" />',
+  close: '<path d="M6 6 18 18M18 6 6 18" />',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2" /><path d="M15 5V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h1" />',
+  check: '<path d="m4 12.5 5.5 5.5L20 6.5" />',
+  arrowRight: '<path d="M4 12h15" /><path d="m13 6 6 6-6 6" />',
+  star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9z" />',
+  heart: '<path d="M12 20.5 4.2 12.9a4.7 4.7 0 0 1 0-6.7 4.7 4.7 0 0 1 6.6 0l1.2 1.2 1.2-1.2a4.7 4.7 0 0 1 6.6 0 4.7 4.7 0 0 1 0 6.7z" />',
+  bolt: '<path d="M13.5 2.5 4.5 14h6l-1 7.5L19.5 10h-6z" />',
+  grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />',
+  list: '<path d="M9 6h11M9 12h11M9 18h11" /><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" />',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16" />',
+  download: '<path d="M12 3v12" /><path d="m7 10.5 5 5 5-5" /><path d="M4 20h16" />',
+  sparkle: '<path d="M12 3.5c.7 4.2 1.6 5.1 5.8 5.8-4.2.7-5.1 1.6-5.8 5.8-.7-4.2-1.6-5.1-5.8-5.8 4.2-.7 5.1-1.6 5.8-5.8Z" /><path d="M18.5 15.5c.4 2.2.9 2.7 3.1 3.1-2.2.4-2.7.9-3.1 3.1-.4-2.2-.9-2.7-3.1-3.1 2.2-.4 2.7-.9 3.1-3.1Z" />',
+  camera: '<path d="M3 8.5h3.2l1.6-2.5h8.4l1.6 2.5H21v11H3z" /><circle cx="12" cy="13.5" r="3.5" />',
+  alert: '<circle cx="12" cy="12" r="9" /><path d="M12 7.5v5.5" /><path d="M12 16.5h.01" />',
+  spinner: '<circle cx="12" cy="12" r="9" opacity="0.3" /><path d="M21 12a9 9 0 0 0-9-9" />',
+  /* el:brush (pipeline/dist/bodies/el.jsonl). Elusive Icons draws on a
+     1200x1200 grid as a single filled path (its own
+     fill="currentColor" wins over this component's fill="none" default,
+     since a presentation attribute on the element beats an inherited one) -
+     see the header comment above. */
+  brush: {
+    body: '<path fill="currentColor" d="M1157.602.013c-46.711 2.677-736.479 591.498-793.123 798.838l130.736 136.944C868.899 624.199 988.915 294.221 1200 .649L1157.617 0zM323.267 840.562C87.09 927.418 235.147 1099.273 0 1183.352c266.294 59.953 384.296-49.748 454.003-205.421L323.267 840.548z" />',
+    viewBox: "0 0 1200 1200",
+  },
+  /* tabler:player-play-filled (pipeline/dist/bodies/tabler.jsonl) - filled
+     media affordance for the video facade; its own fill="currentColor"
+     overrides the component's fill="none", same as brush. */
+  "player-play-filled": {
+    body: '<path fill="currentColor" d="M6 4v16a1 1 0 0 0 1.524.852l13-8a1 1 0 0 0 0-1.704l-13-8A1 1 0 0 0 6 4" />',
+    viewBox: "0 0 24 24",
+  },
+} as const;
+
+export type IconName = keyof typeof ICONS;
+
+/** Both forms (a bare stroke-path string, or `{ body, viewBox }` for an icon
+    on its own native grid) are normalized here rather than at every call
+    site. */
+function entryFor(name: IconName): { body: string; viewBox: string } {
+  const raw = ICONS[name];
+  return typeof raw === "string" ? { body: raw, viewBox: "0 0 24 24" } : raw;
+}
+
+interface Props {
+  name: IconName;
+  size?: number;
+  strokeWidth?: number;
+  class?: string;
+  style?: string;
+}
+
+const {
+  name,
+  size = 20,
+  strokeWidth = 2,
+  class: className,
+  style,
+} = Astro.props;
+
+const entry = entryFor(name);
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox={entry.viewBox}
+  fill="none"
+  stroke="currentColor"
+  stroke-width={strokeWidth}
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+  class={className}
+  style={style}
+  set:html={entry.body}
+/>

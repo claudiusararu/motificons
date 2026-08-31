@@ -1,0 +1,25 @@
+{
+  "name": "pipeline",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "sync": "node --experimental-strip-types --no-warnings=ExperimentalWarning src/sync-icons.ts",
+    "check": "tsc --noEmit",
+    "spike:s1": "node --experimental-strip-types --no-warnings=ExperimentalWarning src/spike-s1.ts",
+    "build-shards": "node --experimental-strip-types --no-warnings=ExperimentalWarning src/build-shards.ts",
+    "build-desktop-pack": "node --experimental-strip-types --no-warnings=ExperimentalWarning src/build-desktop-pack.ts",
+    "publish-data": "node --experimental-strip-types --no-warnings=ExperimentalWarning src/publish-data.ts"
+  },
+  "dependencies": {
+    "@iconify/json": "^2.2.511"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "5.8.2",
+    "wrangler": "^4.120.0"
+  }
+}

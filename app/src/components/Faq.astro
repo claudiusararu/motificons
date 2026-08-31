@@ -1,0 +1,32 @@
+---
+import { faqSchema, type Faq } from "../lib/site";
+
+interface Props {
+  title?: string;
+  faqs: Faq[];
+  class?: string;
+}
+
+const { title = "Questions", faqs, class: className } = Astro.props;
+---
+
+<section class:list={["", className]}>
+  <h2 class="text-h2 font-semibold">{title}</h2>
+  <dl class="mt-8 flex flex-col gap-7">
+    {
+      faqs.map((faq) => (
+        <div>
+          <dt class="font-bold">{faq.q}</dt>
+          <dd class="mt-2 text-ink">{faq.a}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</section>
+
+{/* One FAQPage per page; every page using this component gets valid schema. */}
+<script
+  type="application/ld+json"
+  is:inline
+  set:html={faqSchema(faqs)}
+/>

@@ -1,0 +1,114 @@
+---
+export interface TabItem {
+  label: string;
+  value: string;
+  /** Given an href the tab is a real link (browse pages); otherwise it toggles. */
+  href?: string;
+}
+
+interface Props {
+  items: TabItem[];
+  value?: string;
+  label: string;
+  class?: string;
+}
+
+const { items, value, label, class: className } = Astro.props;
+const activeValue = value ?? items[0]?.value;
+
+/* Links that navigate are navigation, not tabs, so they render as a <nav> in
+   the normal tab order. Only the in-page switcher takes the WAI-ARIA tabs
+   pattern (roving tabindex, arrows, Home/End). */
+const isNavigation = items.some((item) => item.href);
+
+/* Tab nav: 14px, inactive ink-muted, active blue-deep with a 3px
+   blue-deep underline, ~21px padding. */
+const TAB_CLASS =
+  "inline-flex items-center border-b-[3px] border-transparent px-[21px] pt-[21px] pb-[18px] text-meta font-semibold text-ink-muted no-underline transition-colors duration-[120ms] ease-in hover:text-ink aria-selected:border-blue-deep aria-selected:text-blue-deep aria-[current=page]:border-blue-deep aria-[current=page]:text-blue-deep";
+
+const Wrapper = isNavigation ? "nav" : "div";
+const wrapperAttrs = isNavigation
+  ? { "aria-label": label }
+  : { role: "tablist" as const, "aria-label": label };
+---
+
+<Wrapper
+  {...wrapperAttrs}
+  data-tabs={isNavigation ? undefined : true}
+  class:list={["flex flex-wrap items-center", className]}
+>
+  {
+    items.map((item) =>
+      item.href ? (
+        <a
+          href={item.href}
+          aria-current={item.value === activeValue ? "page" : undefined}
+          class={TAB_CLASS}
+        >
+          {item.label}
+        </a>
+      ) : (
+        <button
+          type="button"
+          role="tab"
+          data-tab
+          data-value={item.value}
+          aria-selected={item.value === activeValue ? "true" : "false"}
+          tabindex={item.value === activeValue ? 0 : -1}
+          class={TAB_CLASS}
+        >
+          {item.label}
+        </button>
+      ),
+    )
+  }
+</Wrapper>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-tabs]").forEach((list) => {
+    const tabs = Array.from(list.querySelectorAll<HTMLElement>("[data-tab]"));
+
+    const select = (tab: HTMLElement, moveFocus: boolean) => {
+      tabs.forEach((other) => {
+        const isTarget = other === tab;
+        other.setAttribute("aria-selected", String(isTarget));
+        other.tabIndex = isTarget ? 0 : -1;
+      });
+      if (moveFocus) tab.focus();
+      list.dispatchEvent(
+        new CustomEvent("tab:change", {
+          bubbles: true,
+          detail: { value: tab.dataset.value },
+        }),
+      );
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => select(tab, false));
+
+      tab.addEventListener("keydown", (event) => {
+        const step =
+          event.key === "ArrowRight" || event.key === "ArrowDown"
+            ? 1
+            : event.key === "ArrowLeft" || event.key === "ArrowUp"
+              ? -1
+              : 0;
+
+        let next = -1;
+        if (step !== 0) {
+          next = (index + step + tabs.length) % tabs.length;
+        } else if (event.key === "Home") {
+          next = 0;
+        } else if (event.key === "End") {
+          next = tabs.length - 1;
+        } else {
+          return;
+        }
+
+        event.preventDefault();
+        const target = tabs[next];
+        if (target) select(target, true);
+      });
+    });
+  });
+</script>

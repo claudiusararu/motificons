@@ -1,0 +1,251 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Card from "../components/Card.astro";
+import Icon from "../components/Icon.astro";
+import ResourceManager from "../components/react/ResourceManager";
+import ApiKeySection from "../components/react/ApiKeySection";
+import DangerZoneSection from "../components/react/DangerZoneSection";
+import { db } from "../db/client";
+import { getPersonalWorkspace } from "../lib/auth/workspace";
+import { listCollections } from "../lib/workspace/collections";
+import { countIconsInCollection } from "../lib/workspace/collection-items";
+import { getActiveApiKey } from "../lib/workspace/api-keys";
+
+/* SSR, session-gated, per-visitor: needs Astro.locals.user (populated by
+   src/middleware.ts) before it can render anything, and the response is
+   never shareable across visitors - see the no-store header below. */
+export const prerender = false;
+
+if (!Astro.locals.user) {
+  /* A magic-link click with a bad/expired token lands here as
+     /dashboard?error=INVALID_TOKEN (Better Auth's magic-link plugin
+     redirects unauthenticated failures to the sign-in flow's own
+     callbackURL, which is "/dashboard" - see AuthCard.tsx). Signed-out
+     visitors bounce onward to /sign-in below; without this, that error code
+     was silently dropped and the visitor landed on a blank sign-in form
+     with zero explanation (PM-verified live bug). Forwarding it lets
+     AuthCard.tsx show the actual notice instead of a dead end.
+     No intermediate `const` here on purpose - `astro check` flags a false
+     "declared but never read" hint on a const in this exact shape (an
+     if-block whose only statements are the const and a `return
+     Astro.redirect(...)` that reads it); inlining sidesteps the checker
+     quirk without changing behavior. */
+  return Astro.redirect(
+    Astro.url.searchParams.has("error")
+      ? `/sign-in?error=${encodeURIComponent(Astro.url.searchParams.get("error")!)}`
+      : "/sign-in",
+  );
+}
+
+const user = Astro.locals.user;
+
+/* A signed-in visitor is the only requirement - accounts are free, and the
+   signed-out case already bounced to /sign-in above. There is no second
+   gate here. */
+const database = await db();
+
+/* Per-user HTML must never be cached - a shared cache serving one visitor's
+   dashboard to the next would leak their email/workspace. */
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const workspace = await getPersonalWorkspace(database, user.id);
+
+const collections = workspace ? await listCollections(database, workspace.id) : [];
+
+/* One saved-icon count per collection, for the dashboard row: collections
+   are meant to be skimmable at a glance, not opened one by one to find out
+   which is empty. */
+const collectionCounts = await Promise.all(
+  collections.map((c) => countIconsInCollection(database, c.id)),
+);
+
+const firstCollection = collections[0] ?? null;
+
+/* No plaintext ever lives server-side past the moment it is generated (see
+   lib/workspace/api-keys.ts's module docstring) - this is metadata only
+   (display prefix + created date), the same thing GET /api/keys returns. */
+const apiKey = workspace ? await getActiveApiKey(database, user.id) : null;
+
+/* Compact three-step guidance (not a wizard - no dismiss state, no forced
+   flow, just a short reminder of the loop). Steps 2 and 3 carry real links;
+   step 3 only links out once a collection actually exists, so it is never a
+   dead click pointing nowhere. */
+const STEPS: { text: string; href?: string }[] = [
+  { text: "Create a collection" },
+  { text: "Find icons and press the star to save them", href: "/search" },
+  {
+    text: "Open the collection to style and export its icons",
+    href: firstCollection ? `/collections/${firstCollection.id}` : undefined,
+  },
+];
+---
+
+<Layout
+  title="Dashboard - Motificons"
+  description="Your Motificons account: workspace and collections."
+  noindex
+>
+  <Header authState={{ signedIn: true, name: user.name, email: user.email }} />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <div class="pt-14">
+        <h1 class="text-h2 font-bold">Your workspace</h1>
+        <p class="mt-2 text-body text-ink-muted">
+          Signed in as <strong class="text-ink">{user.email}</strong>
+        </p>
+      </div>
+
+      <div class="mt-10" data-dismissible data-dismiss-key="motificons:dashboard-getting-started-dismissed">
+        <Card>
+          <div class="flex items-start justify-between gap-4">
+            <h2 class="text-h3 font-semibold">Here&apos;s how you get started</h2>
+            <button
+              type="button"
+              data-dismiss-button
+              aria-label="Dismiss"
+              class="touch-target-inset -m-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-control text-ink-muted transition-colors duration-[120ms] ease-in hover:text-ink"
+            >
+              <Icon name="close" size={18} />
+            </button>
+          </div>
+          <ol class="mt-4 flex flex-col gap-3">
+            {
+              STEPS.map((step, index) => (
+                <li class="flex items-center gap-3 text-body text-ink">
+                  <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-primary text-pill font-bold text-ink">
+                    {index + 1}
+                  </span>
+                  {step.href ? (
+                    <a href={step.href} class="prose-link font-semibold">
+                      {step.text}
+                    </a>
+                  ) : (
+                    step.text
+                  )}
+                </li>
+              ))
+            }
+          </ol>
+        </Card>
+      </div>
+
+      {/* Stacked full-width sections, no grid - Collections, API key,
+          Coding agents (MCP), Danger zone. */}
+      <div class="mt-12">
+        <section>
+          <h2 class="text-h3 font-semibold">Collections</h2>
+          <ResourceManager
+            client:load
+            kind="collection"
+            apiBase="/api/collections"
+            initialItems={collections.map((c, i) => ({
+              id: c.id,
+              name: c.name,
+              href: `/collections/${c.id}`,
+              count: collectionCounts[i] ?? 0,
+            }))}
+            createLabel="New collection"
+            namePlaceholder='e.g. "Settings screen"'
+            emptyIcon="star"
+            emptyTitle="No collections yet"
+            emptyBody='A collection is a saved group of icons you can come back to or share by link - handy for a "settings screen" set or a moodboard.'
+            emptyLink={{ text: "Browse the library and press Save on any icon.", href: "/search" }}
+            detailHrefBase="/collections"
+          />
+        </section>
+      </div>
+
+      <div class="mt-12">
+        {/* Same treatment as the homepage Mac-app banner: blue card,
+            bordered app icon, yellow download button. The download
+            link keeps the `download` attribute, so it stays a styled anchor
+            rather than Button. */}
+        <Card
+          variant="blue"
+          class="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div class="flex items-center gap-5">
+            <img
+              src="/app/app-icon.png"
+              width="72"
+              height="72"
+              alt=""
+              class="h-18 w-18 shrink-0 rounded-[10px] border-2 border-blue-deep shadow-[0_4px_0_0_var(--color-blue-deep)]"
+            />
+            <div>
+              <h2 class="text-h3 font-bold text-ink">Mac app</h2>
+              <p class="mt-1 text-meta text-ink">
+                Spotlight search for icons - press Ctrl-Option-Space anywhere,
+                search, hit Enter, paste.{" "}
+                <a
+                  href="/app"
+                  class="font-semibold text-ink underline underline-offset-2"
+                >
+                  See what it does
+                </a>
+              </p>
+              <p class="mt-1 text-meta text-ink">
+                Apple silicon and Intel - macOS 14 or newer. Activate with
+                your API key below.
+              </p>
+            </div>
+          </div>
+
+          <a
+            id="mac-app-download"
+            href="/api/download/mac"
+            download
+            class="press relative inline-flex shrink-0 items-center justify-center gap-2.5 rounded-btn border-2 border-ink bg-primary px-6 py-[15px] text-body font-semibold leading-[1.25] text-ink no-underline select-none"
+          >
+            Download for macOS
+          </a>
+        </Card>
+      </div>
+
+      <div class="mt-12">
+        <section>
+          <h2 class="text-h3 font-semibold">API key</h2>
+          <ApiKeySection client:load initialKey={apiKey} mcpMountSelector="#mcp-section-mount" />
+        </section>
+      </div>
+
+      {/* Coding agents (MCP): ApiKeySection.tsx portals its endpoint card +
+          "How to connect" guide into #mcp-section-mount below, so the
+          plaintext key it just created/regenerated (never persisted
+          server-side, shown once) still flows straight into the config
+          snippets without a second island re-deriving it. */}
+      <div class="mt-12">
+        <section>
+          <h2 class="text-h3 font-semibold">Coding agents (MCP)</h2>
+          <p class="mt-2 text-body text-ink-muted">
+            Point your agent at the MCP server and it picks icons straight
+            from your collections.
+          </p>
+          <div id="mcp-section-mount" class="mt-4"></div>
+        </section>
+      </div>
+
+      <div class="mt-12">
+        <section>
+          <h2 class="text-h3 font-semibold">Danger zone</h2>
+          <div class="mt-4">
+            <DangerZoneSection client:load />
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script>
+  // The click itself navigates to a file stream, so the page never unloads
+  // and the capture always gets out.
+  document.getElementById("mac-app-download")?.addEventListener("click", () => {
+    window.posthog?.capture("mac_app_download");
+  });
+</script>

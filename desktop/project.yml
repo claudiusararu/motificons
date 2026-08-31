@@ -1,0 +1,100 @@
+name: Motificons
+# Local signing team override (gitignored, not in this repo): create
+# project-local.yml next to this file with
+#   targets:
+#     Motificons:
+#       settings:
+#         base:
+#           DEVELOPMENT_TEAM: <your Apple team id>
+# then export DEVELOPMENT_TEAM=<your Apple team id> before running
+# `xcodegen generate` - that same env var also gates whether this include is
+# read at all, so it's skipped cleanly (no error) when unset. Without it,
+# Debug builds still generate; Xcode just prompts you to pick a signing team.
+include:
+  - path: project-local.yml
+    enable: ${DEVELOPMENT_TEAM}
+options:
+  bundleIdPrefix: app.motificons
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+targets:
+  Motificons:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+      - path: AppIcon/AppIcon.icns
+        buildPhase: resources
+      - path: ../pipeline/dist/desktop/pack.sqlite
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.motificons.desktop
+        PRODUCT_NAME: Motificons
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "5"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_CFBundleIconFile: AppIcon
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Motificons"
+        INFOPLIST_KEY_CFBundleDisplayName: Motificons
+        CODE_SIGN_STYLE: Automatic
+        DEAD_CODE_STRIPPING: YES
+      configs:
+        # Real Apple Development signing (stable identity) - ad-hoc signing
+        # changes per build, so Keychain re-prompts for the stored mk_ key
+        # after every rebuild.
+        Debug:
+          CODE_SIGN_IDENTITY: "Apple Development"
+          ENABLE_HARDENED_RUNTIME: NO
+        # Developer ID signing + hardened runtime, required for notarization.
+        # CODE_SIGN_STYLE Manual here (overriding the Automatic default in
+        # base): Xcode's Automatic signing manages a matched provisioning
+        # profile for the *development* team-selected identity, and errors
+        # out ("conflicting provisioning settings") if CODE_SIGN_IDENTITY is
+        # explicitly overridden to something else - verified empirically.
+        # Direct/Developer-ID distribution outside the sandbox needs no
+        # provisioning profile at all, so Manual + just the identity is
+        # correct and sufficient. Degrades gracefully: if this identity isn't
+        # in the keychain yet, xcodebuild fails to sign the Release config
+        # until a developer creates/installs the "Developer ID Application"
+        # certificate - scripts/make-dmg.sh checks for it up front and warns
+        # clearly.
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Developer ID Application"
+          ENABLE_HARDENED_RUNTIME: YES
+          # Both verified empirically against a real notarytool submission
+          # (job b0e981f9-2d98-44b2-bbc8-01b34ac0ac3d, status Invalid) before
+          # these were added - notarization rejected the archive for both:
+          #   1. "signature does not include a secure timestamp" - `xcodebuild
+          #      build` (not `archive`) doesn't pass --timestamp by default.
+          #   2. "executable requests com.apple.security.get-task-allow" -
+          #      `xcodebuild build` always injects this debug entitlement;
+          #      only the `archive` action strips it. We don't archive here,
+          #      so turn off entitlement auto-injection instead - the app
+          #      needs no entitlements at all (no sandbox, no JIT, no Apple
+          #      Events), so an empty entitlements set is correct.
+          OTHER_CODE_SIGN_FLAGS: --timestamp
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+    # GENERATE_INFOPLIST_FILE's INFOPLIST_KEY_* synthesis doesn't pick up
+    # CFBundleIconFile (unlike CFBundleDisplayName/LSUIElement/etc - verified
+    # empirically), so stamp it in directly. inputFiles/outputFiles both point
+    # at Info.plist itself (read-modify-write) so the build system schedules
+    # this strictly after ProcessInfoPlistFile generates it and before
+    # CodeSign reads it - without that dependency edge this phase has no
+    # declared inputs and the newer build system can run it before the
+    # plist even exists, silently dropping the edit.
+    postbuildScripts:
+      - name: Set CFBundleIconFile
+        script: |
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFile" "$TARGET_BUILD_DIR/$INFOPLIST_PATH" 2>/dev/null
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AppIcon" "$TARGET_BUILD_DIR/$INFOPLIST_PATH"
+          touch "$DERIVED_FILE_DIR/set-cfbundleiconfile.stamp"
+        inputFiles:
+          - $(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)
+          - $(DERIVED_FILE_DIR)/set-cfbundleiconfile.stamp

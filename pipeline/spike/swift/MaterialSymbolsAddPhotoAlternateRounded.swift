@@ -1,0 +1,66 @@
+import SwiftUI
+
+struct MaterialSymbolsAddPhotoAlternateRounded: Shape {
+    func path(in rect: CGRect) -> Path {
+        let vw = 24.0
+        let vh = 24.0
+        let s = min(rect.width / vw, rect.height / vh)
+        let ox = rect.minX + (rect.width - vw * s) / 2
+        let oy = rect.minY + (rect.height - vh * s) / 2
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: ox + x * s, y: oy + y * s) }
+        var path = Path()
+        path.move(to: p(5.0, 21.0))
+        path.addQuadCurve(to: p(3.588, 20.413), control: p(4.175, 21.0))
+        path.addQuadCurve(to: p(3.0, 19.0), control: p(3.001, 19.826))
+        path.addLine(to: p(3.0, 5.0))
+        path.addQuadCurve(to: p(3.588, 3.588), control: p(3.0, 4.175))
+        path.addQuadCurve(to: p(5.0, 3.0), control: p(4.176, 3.001))
+        path.addLine(to: p(12.45, 3.0))
+        path.addQuadCurve(to: p(13.213, 3.438), control: p(12.95, 3.0))
+        path.addQuadCurve(to: p(13.275, 4.375), control: p(13.476, 3.876))
+        path.addQuadCurve(to: p(13.075, 5.175), control: p(13.15, 4.775))
+        path.addQuadCurve(to: p(13.0, 6.0), control: p(13.0, 5.575))
+        path.addQuadCurve(to: p(14.463, 9.538), control: p(13.0, 8.075))
+        path.addQuadCurve(to: p(18.0, 11.0), control: p(15.926, 11.001))
+        path.addQuadCurve(to: p(18.825, 10.925), control: p(18.425, 11.0))
+        path.addQuadCurve(to: p(19.625, 10.725), control: p(19.225, 10.85))
+        path.addQuadCurve(to: p(20.563, 10.8), control: p(20.125, 10.55))
+        path.addQuadCurve(to: p(21.0, 11.55), control: p(21.001, 11.05))
+        path.addLine(to: p(21.0, 19.0))
+        path.addQuadCurve(to: p(20.413, 20.413), control: p(21.0, 19.825))
+        path.addQuadCurve(to: p(19.0, 21.0), control: p(19.826, 21.001))
+        path.closeSubpath()
+        path.move(to: p(6.0, 17.0))
+        path.addLine(to: p(18.0, 17.0))
+        path.addLine(to: p(14.25, 12.0))
+        path.addLine(to: p(11.25, 16.0))
+        path.addLine(to: p(9.0, 13.0))
+        path.closeSubpath()
+        path.move(to: p(17.288, 8.713))
+        path.addQuadCurve(to: p(17.0, 8.0), control: p(17.0, 8.425))
+        path.addLine(to: p(17.0, 7.0))
+        path.addLine(to: p(16.0, 7.0))
+        path.addQuadCurve(to: p(15.288, 6.712), control: p(15.575, 7.0))
+        path.addQuadCurve(to: p(15.0, 6.0), control: p(15.001, 6.424))
+        path.addQuadCurve(to: p(15.288, 5.288), control: p(14.999, 5.576))
+        path.addQuadCurve(to: p(16.0, 5.0), control: p(15.577, 5.0))
+        path.addLine(to: p(17.0, 5.0))
+        path.addLine(to: p(17.0, 4.0))
+        path.addQuadCurve(to: p(17.288, 3.288), control: p(17.0, 3.575))
+        path.addQuadCurve(to: p(18.0, 3.0), control: p(17.576, 3.001))
+        path.addQuadCurve(to: p(18.713, 3.288), control: p(18.424, 2.999))
+        path.addQuadCurve(to: p(19.0, 4.0), control: p(19.002, 3.577))
+        path.addLine(to: p(19.0, 5.0))
+        path.addLine(to: p(20.0, 5.0))
+        path.addQuadCurve(to: p(20.713, 5.288), control: p(20.425, 5.0))
+        path.addQuadCurve(to: p(21.0, 6.0), control: p(21.001, 5.576))
+        path.addQuadCurve(to: p(20.712, 6.713), control: p(20.999, 6.424))
+        path.addQuadCurve(to: p(20.0, 7.0), control: p(20.425, 7.002))
+        path.addLine(to: p(19.0, 7.0))
+        path.addLine(to: p(19.0, 8.0))
+        path.addQuadCurve(to: p(18.712, 8.713), control: p(19.0, 8.425))
+        path.addQuadCurve(to: p(18.0, 9.0), control: p(18.424, 9.001))
+        path.addQuadCurve(to: p(17.288, 8.712), control: p(17.576, 8.999))
+        return path
+    }
+}

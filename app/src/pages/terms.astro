@@ -1,0 +1,157 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Card from "../components/Card.astro";
+
+/* Prerendered long-form document page - see privacy.astro's docstring for
+   the container/width and LAST_UPDATED reasoning; same pattern here.
+
+   Plain-language terms for the product as it exists today - a free,
+   open-source icon library. Not legal advice. */
+const LAST_UPDATED = "2026-08-31";
+---
+
+<Layout
+  title="Terms of Use - Motificons"
+  description="The plain-language terms for using Motificons: the site, the icon library, and the MCP server."
+>
+  <Header />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <h1 class="pt-10 text-h1 font-bold">Terms of Use</h1>
+      <p class="mt-3 text-meta text-ink-muted">Last updated {LAST_UPDATED}</p>
+
+      <div class="mt-8 text-body text-ink-muted">
+        <p>
+          These are the terms for using Motificons - the website, the icon
+          library, and the MCP server. Using any of them means you agree to
+          these terms. Written in plain language on purpose; if
+          anything here is unclear, email <a href="mailto:hello@motificons.app" class="prose-link">hello@motificons.app</a> before you rely on it.
+        </p>
+      </div>
+
+      <div class="mt-14">
+        <h2 class="text-h2 font-semibold">The free library</h2>
+        <p class="mt-3 text-body text-ink-muted">
+          Every icon, set and category page is free to browse and download,
+          with no account and no email required. Without an account, search
+          has a daily limit per visitor to keep it usable for everyone -
+          browsing and downloading are not limited at all, and signing in
+          removes the search limit entirely. We can adjust that limit if
+          abuse patterns require it, but the library itself does not become
+          paid later; free stays free.
+        </p>
+      </div>
+
+      <div class="mt-14">
+        <h2 class="text-h2 font-semibold">What an account gives you</h2>
+        <p class="mt-3 text-body text-ink-muted">
+          Motificons is free and there is nothing to buy. An account adds
+          collections, unlimited search, and an MCP key so your coding agent
+          can use your icons. Everything else - every icon, every export
+          format, the style engine and the Mac app - works without one.
+        </p>
+        <p class="mt-3 text-body text-ink-muted">
+          Use what you export in your own products, projects and client
+          work, without limit on how many things you build with it. What
+          these terms do not permit: reselling, redistributing or rehosting
+          Motificons itself (the search tool, the MCP server, the curated
+          library as a product) as a competing service. Building things that
+          use icons from Motificons is exactly what it's for; building a
+          copy of Motificons is not.
+        </p>
+      </div>
+
+      <div class="mt-14">
+        <h2 class="text-h2 font-semibold">Icons keep their own license</h2>
+        <p class="mt-3 text-body text-ink-muted">
+          Nothing on this page changes what license an individual icon
+          carries - every icon in the library remains under its original author's
+          open-source license, whatever that license requires (some need
+          visible attribution, some do not - see <a href="/licenses" class="prose-link">/licenses</a> and each
+          icon's own page for the exact terms). These Terms of Use govern
+          your use of Motificons the product; they do not, and cannot,
+          override any upstream icon's own license. A handful of icon sets
+          are third-party brand/trademark marks - a license to the artwork is
+          not a trademark license, and using those still means following the
+          brand's own guidelines.
+        </p>
+      </div>
+
+      <div class="mt-14">
+        <h2 class="text-h2 font-semibold">Accounts and API keys</h2>
+        <p class="mt-3 text-body text-ink-muted">
+          You are responsible for keeping your sign-in and any API key you
+          generate to yourself. An API key is shown once at creation - if it
+          leaks, revoke it from your dashboard and generate a new one
+          immediately; we cannot see or recover the plaintext of a key we
+          have already issued (see <a href="/privacy" class="prose-link">/privacy</a>).
+          The MCP server enforces a fair-use rate limit per key to keep the
+          service usable for everyone; sustained automated abuse of it, or of
+          the search API, is grounds for suspension.
+        </p>
+      </div>
+
+      <div class="mt-14">
+        <h2 class="text-h2 font-semibold">No warranty</h2>
+        <p class="mt-3 text-body text-ink-muted">
+          Motificons is provided "as is." We work to keep it accurate,
+          available and fast, but we make no guarantee it is free of errors,
+          uninterrupted, or fit for any particular purpose. Icon metadata
+          (license classification, attribution requirements) is compiled in
+          good faith from upstream sources and kept as accurate as we can
+          make it, but you are responsible for verifying license compliance
+          for your own use, especially for commercial or trademark-sensitive
+          work.
+        </p>
+      </div>
+
+      <div class="mt-14">
+        <h2 class="text-h2 font-semibold">Limitation of liability</h2>
+        <p class="mt-3 text-body text-ink-muted">
+          To the extent the law allows, Motificons is not liable for indirect,
+          incidental or consequential damages arising from your use of the
+          site, the library, or the MCP server - including downtime, data loss, or a
+          license classification later found to be wrong. Nothing here limits
+          liability that cannot legally be limited (for example, in cases of
+          fraud or gross negligence).
+        </p>
+      </div>
+
+      <div class="mt-14">
+        <h2 class="text-h2 font-semibold">Termination</h2>
+        <p class="mt-3 text-body text-ink-muted">
+          We can suspend or terminate access for clear abuse - violating the
+          terms above, attempting to circumvent the search limit or rate
+          limits at scale, or using the service to build a
+          Motificons-competing product from our data. We will always try
+          email first before shutting anything down for anything short of
+          active abuse.
+        </p>
+      </div>
+
+      <div class="mt-14">
+        <h2 class="text-h2 font-semibold">Changes to these terms</h2>
+        <p class="mt-3 text-body text-ink-muted">
+          If these terms change materially, the date at the top of this page
+          changes with them. Continuing to use Motificons after a change
+          means you accept the new terms; if a change meaningfully reduces
+          what an account can do, we will email affected accounts directly
+          rather than rely on this page alone.
+        </p>
+      </div>
+
+      <Card variant="standard" class="mt-16">
+        <h2 class="text-h3 font-semibold">Questions</h2>
+        <p class="mt-2 text-meta text-ink-muted">
+          Email <a href="mailto:hello@motificons.app" class="prose-link">hello@motificons.app</a>
+          - a person reads it, not a ticket queue.
+        </p>
+      </Card>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

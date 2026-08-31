@@ -1,0 +1,216 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Card from "../../components/Card.astro";
+import Button from "../../components/Button.astro";
+import { formatPostDate } from "../../lib/blog";
+import { blogPostingSchema, breadcrumbSchema } from "../../lib/seo";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, description, pubDate, updatedDate } = post.data;
+const path = `/blog/${post.id}`;
+
+const jsonLd = blogPostingSchema({ title, description, path, pubDate, updatedDate });
+const breadcrumbs = breadcrumbSchema([
+  { name: "Blog", path: "/blog" },
+  { name: title, path },
+]);
+
+/* One next-action block per post (memory rule: every surface needs a next
+   action) - the single most relevant surface for that post's topic, not a
+   row of competing CTAs. Falls back to the library for any post that does
+   not have a specific entry, though every post shipped today does. */
+const NEXT_ACTION: Record<string, { heading: string; body: string; label: string; href: string }> = {
+  "make-icons-from-different-sets-match": {
+    heading: "See a normalized collection for yourself",
+    body: "Every collection on Motificons can normalize stroke width, size and color to one anchor icon on export - browse the library and try it on a set that is bothering you.",
+    label: "Browse the library",
+    href: "/search",
+  },
+  "give-your-coding-agent-an-icon-library-mcp": {
+    heading: "Give your agent a real icon source",
+    body: "MCP access is free with a Motificons account. Create one, generate an API key, and point your agent at it.",
+    label: "Create a free account",
+    href: "/register",
+  },
+  "svg-to-jsx-react-icon-components": {
+    heading: "Convert an icon right now",
+    body: "Paste an SVG into the free converter and get a React component back, attributes already renamed the way React wants them.",
+    label: "Open the SVG to JSX tool",
+    href: "/tools/svg-to-jsx",
+  },
+};
+const nextAction = NEXT_ACTION[post.id] ?? {
+  heading: "Browse the library",
+  body: "Hundreds of thousands of open-source icons, searchable and free to download.",
+  label: "Browse the library",
+  href: "/search",
+};
+---
+
+<Layout title={`${title} - Motificons Blog`} description={description} canonicalPath={path} ogType="article">
+  <Header />
+
+  <script type="application/ld+json" is:inline set:html={jsonLd} />
+  <script type="application/ld+json" is:inline set:html={breadcrumbs} />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <nav aria-label="Breadcrumb" class="pt-8 text-meta text-ink-muted">
+        <a href="/blog" class="prose-link">Blog</a>
+        <span aria-hidden="true"> / </span>
+        <span>{title}</span>
+      </nav>
+
+      <h1 class="mt-6 text-h1 font-bold">{title}</h1>
+      <p class="mt-3 text-meta text-ink-muted">
+        {formatPostDate(pubDate)}
+        {updatedDate && ` · Updated ${formatPostDate(updatedDate)}`}
+      </p>
+
+      <div class="post-body mt-10">
+        <Content />
+      </div>
+
+      <Card variant="inverted" class="mt-16">
+        <h2 class="text-h3 font-semibold">{nextAction.heading}</h2>
+        <p class="mt-3 text-meta text-on-dark-muted">{nextAction.body}</p>
+        <div class="mt-6">
+          <Button href={nextAction.href}>{nextAction.label}</Button>
+        </div>
+      </Card>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  /* No width cap on the prose - nothing is capped narrower than the shared
+     container (AGENTS.md). Content types are styled by hand here rather than
+     via @tailwindcss/typography (not installed on this project), matching
+     the design system's type scale and colors, and privacy.astro/
+     terms.astro's existing long-form pattern
+     (text-body/text-ink-muted paragraphs, text-h2/text-h3 headings). */
+  .post-body :global(p) {
+    margin-top: 1.25rem;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    color: var(--color-ink);
+  }
+
+  .post-body > :global(:first-child) {
+    margin-top: 0;
+  }
+
+  .post-body :global(h2) {
+    margin-top: 3rem;
+    font-size: var(--text-h2);
+    line-height: var(--text-h2--line-height);
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .post-body :global(h3) {
+    margin-top: 2rem;
+    font-size: var(--text-h3);
+    line-height: var(--text-h3--line-height);
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .post-body :global(ul),
+  .post-body :global(ol) {
+    display: flex;
+    margin-top: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-left: 1.5rem;
+    color: var(--color-ink);
+  }
+
+  .post-body :global(ul) {
+    list-style: disc;
+  }
+
+  .post-body :global(ol) {
+    list-style: decimal;
+  }
+
+  .post-body :global(li) {
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  .post-body :global(li)::marker {
+    color: var(--color-ink);
+  }
+
+  .post-body :global(a) {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    transition: color 120ms ease-in;
+  }
+
+  .post-body :global(a:hover) {
+    color: var(--color-blue-deep);
+  }
+
+  .post-body :global(strong) {
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
+  .post-body :global(code) {
+    border-radius: var(--radius-control);
+    background: var(--color-canvas);
+    padding: 0.15em 0.4em;
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  .post-body :global(pre) {
+    margin-top: 1.5rem;
+    overflow-x: auto;
+    border-radius: var(--radius-card);
+    padding: 1.25rem 1.5rem;
+    color: var(--color-on-dark);
+    /* Shiki's motificons-dark theme (astro.config.mjs) sets the editor
+       background transparent, on the assumption of a navy panel ancestor
+       (same as CodePanel.astro's bg-ink wrapper) - this page supplies that
+       navy directly on the <pre> itself. `!important` because Shiki writes
+       `background-color` as an inline style, which otherwise beats any
+       stylesheet rule regardless of specificity. */
+    background-color: var(--color-ink) !important;
+  }
+
+  .post-body :global(pre code) {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+    font-family: var(--font-mono);
+    font-size: var(--text-code);
+    line-height: var(--text-code--line-height);
+  }
+
+  .post-body :global(blockquote) {
+    margin-top: 1.5rem;
+    border-left: 3px solid var(--color-ink);
+    padding-left: 1.25rem;
+    color: var(--color-ink-muted);
+    font-style: italic;
+  }
+</style>

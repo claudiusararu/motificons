@@ -1,0 +1,126 @@
+---
+import Icon, { type IconName } from "./Icon.astro";
+
+export interface SegmentedItem {
+  label: string;
+  value: string;
+  icon?: IconName;
+}
+
+interface Props {
+  items: SegmentedItem[];
+  /** Value of the segment that starts active. Defaults to the first. */
+  value?: string;
+  /** Icon-only segments invert (ink fill, white glyph) when active. */
+  iconOnly?: boolean;
+  label: string;
+  size?: "default" | "sm";
+  class?: string;
+}
+
+const {
+  items,
+  value,
+  iconOnly = false,
+  label,
+  size = "default",
+  class: className,
+} = Astro.props;
+
+const activeValue = value ?? items[0]?.value;
+
+const SIZES = {
+  default: "px-4 py-[10px] text-meta",
+  sm: "px-3 py-[7px] text-pill",
+};
+---
+
+{/* Segmented control: 2px ink border, white, segments divided by the
+    same 2px rule, active segment #E1E4E8 (or ink fill for icon-only).
+    Accessibility: radiogroup semantics with a roving tabindex; arrows cycle. */}
+<div
+  data-segmented
+  role="radiogroup"
+  aria-label={label}
+  class:list={[
+    "inline-flex overflow-hidden rounded-btn border-2 border-ink bg-surface",
+    className,
+  ]}
+>
+  {
+    items.map((item, index) => (
+      <button
+        type="button"
+        role="radio"
+        data-segment
+        data-value={item.value}
+        aria-checked={item.value === activeValue ? "true" : "false"}
+        tabindex={item.value === activeValue ? 0 : -1}
+        title={iconOnly ? item.label : undefined}
+        class:list={[
+          "inline-flex items-center justify-center gap-2 font-semibold text-ink transition-colors duration-[120ms] ease-in",
+          SIZES[size],
+          iconOnly && "touch-target",
+          index > 0 && "border-l-2 border-ink",
+          iconOnly
+            ? "aria-checked:bg-ink aria-checked:text-surface"
+            : "aria-checked:bg-segment-active",
+        ]}
+      >
+        {item.icon && <Icon name={item.icon} size={18} />}
+        {iconOnly ? <span class="sr-only">{item.label}</span> : item.label}
+      </button>
+    ))
+  }
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-segmented]").forEach((group) => {
+    const segments = Array.from(
+      group.querySelectorAll<HTMLButtonElement>("[data-segment]"),
+    );
+
+    const select = (segment: HTMLButtonElement, moveFocus: boolean) => {
+      segments.forEach((other) => {
+        const isTarget = other === segment;
+        other.setAttribute("aria-checked", String(isTarget));
+        other.tabIndex = isTarget ? 0 : -1;
+      });
+      if (moveFocus) segment.focus();
+      group.dispatchEvent(
+        new CustomEvent("segment:change", {
+          bubbles: true,
+          detail: { value: segment.dataset.value },
+        }),
+      );
+    };
+
+    segments.forEach((segment, index) => {
+      segment.addEventListener("click", () => select(segment, false));
+
+      segment.addEventListener("keydown", (event) => {
+        const step =
+          event.key === "ArrowRight" || event.key === "ArrowDown"
+            ? 1
+            : event.key === "ArrowLeft" || event.key === "ArrowUp"
+              ? -1
+              : 0;
+
+        let next = -1;
+        if (step !== 0) {
+          next = (index + step + segments.length) % segments.length;
+        } else if (event.key === "Home") {
+          next = 0;
+        } else if (event.key === "End") {
+          next = segments.length - 1;
+        } else {
+          return;
+        }
+
+        event.preventDefault();
+        const target = segments[next];
+        if (target) select(target, true);
+      });
+    });
+  });
+</script>

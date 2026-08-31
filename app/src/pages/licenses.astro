@@ -1,0 +1,139 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Card from "../components/Card.astro";
+import Pill from "../components/Pill.astro";
+import { loadLicenses, loadSets } from "../lib/data";
+import { siteStats } from "../lib/site";
+
+/* Prerendered from licenses.json - the same policy table the icon pages read,
+   so this page and every per-icon license badge can never disagree. */
+const licenses = await loadLicenses();
+const sets = await loadSets();
+const stats = await siteStats();
+
+const rows = licenses.licenses.sort((a, b) => b.icons - a.icons);
+const brandSets = licenses.brandSets
+  .map((prefix) => sets.get(prefix))
+  .filter((set) => set !== undefined);
+---
+
+<Layout
+  title="Icon licenses - what you can and cannot do"
+  description={`Every license across ${stats.icons} open-source icons, and exactly what each one asks of you. ${stats.noAttributionPercent}% need no visible attribution.`}
+>
+  <Header />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <h1 class="pt-10 text-h1 font-bold">Licenses</h1>
+      <p class="mt-4 text-ink-muted">
+        Every icon here is open source, but open source is not one rule. This is
+        every license in the library and what it actually asks of you.
+        {stats.noAttributionPercent}% of icons need no visible credit at all.
+        This is a plain-English summary, not legal advice - each license links
+        to its real text.
+      </p>
+
+      <div class="mt-10 overflow-x-auto scroll-light">
+        <table class="w-full min-w-[720px] border-collapse text-left">
+          <caption class="sr-only">Licenses used across the library</caption>
+          <thead>
+            <tr class="border-b-2 border-ink">
+              <th scope="col" class="py-4 pr-4 text-body font-bold">License</th>
+              <th scope="col" class="py-4 pr-4 text-body font-bold">Icons</th>
+              <th scope="col" class="py-4 pr-4 text-body font-bold">Sets</th>
+              <th scope="col" class="py-4 text-body font-bold">What it asks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              rows.map((license) => (
+                <tr class="border-b border-ink/10 align-top">
+                  <th scope="row" class="py-4 pr-4 font-normal">
+                    {license.url ? (
+                      <a
+                        href={license.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="prose-link font-semibold"
+                      >
+                        {license.name}
+                      </a>
+                    ) : (
+                      <span class="font-semibold">{license.name}</span>
+                    )}
+                  </th>
+                  <td class="py-4 pr-4 text-meta tabular-nums">
+                    {license.icons.toLocaleString("en-US")}
+                  </td>
+                  <td class="py-4 pr-4 text-meta tabular-nums">{license.sets}</td>
+                  <td class="py-4 text-meta">
+                    <div class="flex flex-wrap gap-2">
+                      {license.attributionRequired ? (
+                        <Pill variant="blue">Visible credit</Pill>
+                      ) : (
+                        <Pill variant="teal">No attribution</Pill>
+                      )}
+                      {license.noticeRequired && (
+                        <Pill variant="gray">Keep notice</Pill>
+                      )}
+                      {license.shareAlike && <Pill variant="gray">Share alike</Pill>}
+                      {license.nonCommercial && (
+                        <Pill variant="gray">Non-commercial</Pill>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <section class="mt-16">
+        <h2 class="text-h2 font-semibold">Attribution versus notice</h2>
+        <p class="mt-4 text-ink-muted">
+          These are different obligations and conflating them is how people end
+          up crediting nobody or crediting everybody. Visible credit means a
+          line your users can see - Creative Commons licenses ask for this.
+          Keeping the notice means the license text stays with your source,
+          which MIT, Apache and friends ask for and which nobody thinks of as
+          attribution. The "no attribution" filter in search keys off the first
+          one only.
+        </p>
+      </section>
+
+      <section class="mt-16">
+        <h2 class="text-h2 font-semibold">Brand and trademark sets</h2>
+        <p class="mt-4 text-ink-muted">
+          {brandSets.length} sets are collections of third-party logos. The
+          license covers the artwork; it does not give you rights to the
+          trademark. Follow each brand's own guidelines, and do not imply an
+          endorsement that does not exist.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-2">
+          {
+            brandSets.map((set) => (
+              <Pill href={`/${set.prefix}`} variant="gray">
+                {set.name}
+              </Pill>
+            ))
+          }
+        </div>
+      </section>
+
+      <Card variant="standard" class="mt-16">
+        <h2 class="text-h3 font-semibold">Every icon states its own license</h2>
+        <p class="mt-2 text-meta text-ink-muted">
+          Each icon page shows its exact license, whether it needs attribution,
+          and a ready-made attribution snippet to copy. Search can filter to
+          icons that need no visible credit at all.
+        </p>
+      </Card>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

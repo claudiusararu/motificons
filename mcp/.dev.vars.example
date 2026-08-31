@@ -1,0 +1,3 @@
+# Local-only secrets for `wrangler dev`. Copy to .dev.vars (gitignored).
+# This Worker currently needs no local secrets: a live API key from the app
+# is the whole auth gate. Future local-only secrets belong here.

@@ -1,0 +1,49 @@
+---
+export type StatAccent = "blue" | "teal" | "grape" | "violet" | "red";
+
+interface Props {
+  /** Formatted by the caller; totals are pipeline data, never hardcoded copy. */
+  value: string;
+  /** The accent-colored tail, e.g. "+". Pass "" to drop it. */
+  suffix?: string;
+  label: string;
+  accent?: StatAccent;
+  featured?: boolean;
+  class?: string;
+}
+
+const {
+  value,
+  suffix = "+",
+  label,
+  accent = "blue",
+  featured = false,
+  class: className,
+} = Astro.props;
+
+/* Deep hues only: the level-3 accents do not carry enough contrast for text. */
+const ACCENTS: Record<StatAccent, string> = {
+  blue: "text-blue-deep",
+  teal: "text-teal-deep",
+  grape: "text-grape-deep",
+  violet: "text-violet-deep",
+  red: "text-red-deep",
+};
+---
+
+{/* Stat card: big 700 number with an accent-colored tail, 14px muted
+    label. Featured stat is the yellow card (label stays ink for contrast). */}
+<div
+  class:list={[
+    "rounded-card px-8 py-7",
+    featured ? "bg-primary shadow-card-primary" : "bg-surface shadow-card",
+    className,
+  ]}
+>
+  <p class="text-h1 leading-none font-bold text-ink">
+    {value}{suffix && <span class={ACCENTS[accent]}>{suffix}</span>}
+  </p>
+  <p class:list={["mt-3 text-meta", featured ? "text-ink" : "text-ink-muted"]}>
+    {label}
+  </p>
+</div>

@@ -1,0 +1,250 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+import { siteStats } from "../lib/site";
+import HeroGlyphField from "../components/HeroGlyphField.astro";
+
+const stats = await siteStats();
+
+/* Real recordings of the shipping app (public/app/*) - see Header.astro's
+   NAV entry and sitemap-pages.xml.ts's STATIC_PAGES for the rest of this
+   page's plumbing. Captions name the exact screen so the grid doubles as
+   alt-text-quality documentation, not just decoration. */
+const SCREENSHOTS: { src: string; caption: string }[] = [
+  {
+    src: "/app/app-search.png",
+    caption: `Search ${stats.icons}+ icons without leaving your app`,
+  },
+  {
+    src: "/app/app-home.png",
+    caption: "Your collections and every icon set, one shortcut away",
+  },
+  {
+    src: "/app/app-set-search.png",
+    caption: "Search inside a single set",
+  },
+  {
+    src: "/app/app-filters.png",
+    caption: "Filter by set or category",
+  },
+  {
+    src: "/app/app-save.png",
+    caption: "Cmd-D saves an icon to your collection from anywhere",
+  },
+  {
+    src: "/app/app-collection.png",
+    caption: "Your curated collection, ready wherever you work",
+  },
+];
+
+const FEATURES: { title: string; line: string }[] = [
+  {
+    title: "One shortcut, everywhere",
+    line: "Works on top of any app - design tools, IDEs, browsers, slides. If you can paste, Motificons works there.",
+  },
+  {
+    title: "The right format pastes itself",
+    line: "One copy carries three flavors: Figma and Illustrator take the vector, Photoshop takes the PNG, your editor takes the code. You never think about formats again.",
+  },
+  {
+    title: "Code-ready icons",
+    line: "Option-Enter copies React, Vue, Svelte or SwiftUI - your choice, set once in Settings. No converters, no cleanup.",
+  },
+  {
+    title: "Instant, and fully offline",
+    line: "The entire library ships inside the app. Search is local - it works on a plane, and it's faster than opening a browser tab.",
+  },
+  {
+    title: "Your collections, one keystroke away",
+    line: "Curate your product's icon set on the web, then press Cmd-D to save from anywhere. The same collections your coding agents use.",
+  },
+  {
+    title: "Keyboard-first",
+    line: "Arrows, Enter, Esc. Your hands never leave the keys.",
+  },
+];
+---
+
+<Layout
+  title="The Mac app - Spotlight search for icons | Motificons"
+  description={`Press a shortcut in any app, search ${stats.icons}+ icons instantly, hit Enter and paste the icon anywhere - Figma, Photoshop, Xcode or your editor. Free, like the rest of Motificons.`}
+>
+  <Header active="app" />
+
+  <main id="main" class="pb-24">
+    {/* Hero mirrors the homepage hero exactly: #94d0ff fill, glyph field
+        behind, ink-deep text. */}
+    <section
+      class="relative overflow-hidden pt-16 pb-16"
+      style="background-color:#94d0ff"
+    >
+      <HeroGlyphField />
+
+      <div class="page-container relative">
+        <div class="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+          <img
+            src="/app/app-icon.png"
+            width="96"
+            height="96"
+            alt="Motificons Mac app icon"
+            class="h-24 w-24 shrink-0 rounded-[10px] border-2 border-blue-deep shadow-[0_4px_0_0_var(--color-blue-deep)]"
+          />
+          <h1 class="text-h2 font-bold text-ink-deep sm:text-hero">
+            Spotlight search for icons.
+          </h1>
+        </div>
+
+        <p class="mt-6 max-w-none text-ink-deep">
+          Stop leaving your work to hunt for icons. Press a shortcut in Figma,
+          Photoshop, Illustrator, VS Code or any other app - type what you
+          need, hit Enter, and the icon is on your clipboard. Paste it as
+          crisp vector in your design tool, as PNG in Photoshop, or as
+          ready-to-use code in your editor. Two seconds, and you never left
+          your canvas.
+        </p>
+
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <Button href="/api/download/mac" download>Download for Mac</Button>
+          <a
+            href="/register"
+            class="text-body font-semibold text-ink-deep underline underline-offset-2"
+          >
+            Create a free account
+          </a>
+        </div>
+
+        <p class="mt-4 text-meta text-ink-deep">
+          Free, like the rest of Motificons. It is also on{" "}
+          <a href="/dashboard" class="prose-link font-semibold text-ink-deep">your dashboard</a>.
+        </p>
+      </div>
+    </section>
+
+    <section class="mt-16">
+      <div class="page-container">
+        <h2 class="text-h2 font-semibold">You know this loop.</h2>
+        <p class="mt-4 max-w-none text-ink">
+          Switch to the browser. Google "arrow icon svg". Open three tabs,
+          compare five sets that don't match, download a file, drag it in,
+          clean it up. Repeat twenty times a day, every day. That loop costs
+          designers and developers hours every single week - Motificons
+          deletes it. One shortcut, one search, one keystroke, back to work.
+        </p>
+      </div>
+    </section>
+
+    <section class="mt-16">
+      <div class="page-container">
+        <h2 class="text-h2 font-semibold">See it in action</h2>
+        {/* Privacy-first YouTube embed (AGENTS.md - no third-party at
+            runtime): nothing loads from YouTube until the visitor clicks
+            play, and then only youtube-nocookie. The poster is our own
+            self-hosted screenshot with a light dark overlay so the play
+            button reads. Standard 16:9 YouTube player on play: a crop to
+            hide the author bar clipped the video, so it stays uncropped. */}
+        <div
+          id="app-video"
+          class="relative mt-8 overflow-hidden rounded-card bg-ink shadow-card"
+          style="aspect-ratio: 16 / 10.4"
+          data-embed="https://www.youtube-nocookie.com/embed/t9aSjIbbHR4?autoplay=1&rel=0&modestbranding=1"
+        >
+          <button
+            type="button"
+            class="group absolute inset-0 h-full w-full cursor-pointer"
+            aria-label="Play the Motificons app video"
+          >
+            <img
+              src="/app/play.png"
+              alt=""
+              class="absolute inset-0 h-full w-full object-cover"
+            />
+            <span class="absolute inset-0 bg-ink/25"></span>
+            <span class="absolute inset-0 grid place-items-center">
+              <span
+                class="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-primary text-ink shadow-card transition-transform group-hover:scale-105 motion-reduce:transition-none"
+              >
+                <Icon name="player-play-filled" size={26} class="ml-1" />
+              </span>
+            </span>
+          </button>
+        </div>
+        <script>
+          const container = document.getElementById("app-video");
+          const button = container?.querySelector("button");
+          button?.addEventListener("click", () => {
+            const src = container?.getAttribute("data-embed");
+            if (!container || !src) return;
+            const iframe = document.createElement("iframe");
+            iframe.src = src;
+            iframe.title = "Motificons app";
+            iframe.className = "absolute inset-0 h-full w-full border-0";
+            iframe.setAttribute("allow", "autoplay; fullscreen; picture-in-picture");
+            iframe.setAttribute("allowfullscreen", "");
+            container.replaceChildren(iframe);
+          });
+        </script>
+      </div>
+    </section>
+
+    <section class="mt-16">
+      <div class="page-container">
+        <h2 class="text-h2 font-semibold">Every screen</h2>
+        <div class="mt-8 grid gap-6 sm:grid-cols-2">
+          {
+            SCREENSHOTS.map((shot) => (
+              <div class="overflow-hidden rounded-card bg-surface shadow-card">
+                <img
+                  src={shot.src}
+                  alt={shot.caption}
+                  loading="lazy"
+                  class="block h-auto max-w-full w-full"
+                />
+                <p class="px-6 py-5 text-meta text-ink">{shot.caption}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-16">
+      <div class="page-container">
+        <h2 class="text-h2 font-semibold">What you get</h2>
+        <ul class="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+          {
+            FEATURES.map((feature) => (
+              <li class="flex items-start gap-3">
+                <Icon
+                  name="check"
+                  size={18}
+                  strokeWidth={3}
+                  class="mt-[3px] shrink-0 text-teal-deep"
+                />
+                <div>
+                  <p class="text-body font-bold text-ink">{feature.title}</p>
+                  <p class="mt-1 text-meta text-ink-muted">{feature.line}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+
+    <section class="mt-16">
+      <div class="page-container">
+        <p class="text-h3 font-bold text-ink">
+          Icons stop being an errand. They become a keystroke.
+        </p>
+        <div class="mt-6">
+          <Button href="/api/download/mac" download>Download for Mac</Button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>

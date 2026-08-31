@@ -1,0 +1,184 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Icon from "../../components/Icon.astro";
+import SetGrid from "../../components/SetGrid.astro";
+import CollectionHeaderControls from "../../components/react/CollectionHeaderControls";
+import CollectionWorkspace from "../../components/react/CollectionWorkspace";
+import { db } from "../../db/client";
+import { getPersonalWorkspace } from "../../lib/auth/workspace";
+import { getCollection } from "../../lib/workspace/collections";
+import { listCollectionItems } from "../../lib/workspace/collection-items";
+import { getCollectionStyleSettings } from "../../lib/workspace/collection-style";
+import { getIcon, getSet, loadCategories, loadSetList } from "../../lib/data";
+
+/*
+ * SSR, not prerendered - per-visitor and session-gated. This URL is the
+ * future public share URL for a collection, which is exactly why it 404s
+ * rather than
+ * redirects to /sign-in for a signed-out or non-owner visitor: a redirect
+ * would confirm the collection exists behind a login wall, which is not a
+ * thing a would-be public share link should ever leak. Owner-only for now;
+ * the public-view half of this route is not built yet.
+ *
+ * Being signed in is the only requirement - collections are free, they just
+ * need an account to live on.
+ */
+export const prerender = false;
+
+if (!Astro.locals.user) {
+  return await Astro.rewrite("/404");
+}
+
+const database = await db();
+
+const { id = "" } = Astro.params;
+
+const workspace = await getPersonalWorkspace(database, Astro.locals.user.id);
+if (!workspace) return await Astro.rewrite("/404");
+
+const collection = await getCollection(database, workspace.id, id);
+if (!collection) return await Astro.rewrite("/404");
+
+/* Per-user HTML must never be cached. */
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+/* Resolve each saved "prefix:name" id to its glyph plus the set's style-
+   engine tier - CollectionWorkspace needs the tier client-side to
+   apply the collection's style settings honestly (a T4 icon never fakes a
+   stroke it cannot take). A saved icon can no longer resolve (a set removed
+   at a pipeline re-sync, say) - `getIcon` returns null for those and they
+   are dropped from the grid rather than rendered broken; the collectionItem
+   row is left alone so a future re-sync that restores the icon brings it
+   back automatically. */
+const savedItems = await listCollectionItems(database, collection.id);
+const iconItems = (
+  await Promise.all(
+    savedItems.map(async (saved) => {
+      const [prefix, name] = saved.iconId.split(":");
+      if (!prefix || !name) return null;
+      const icon = await getIcon(prefix, name);
+      if (!icon) return null;
+      const set = await getSet(prefix);
+      /* "Download collection": the same `set` lookup `tier` already needed,
+         forwarded a little further so LICENSES.txt can be built client-side
+         without a second server round trip - a minimal server-side extension
+         of the collection items payload, for a field genuinely missing
+         client-side (CollectionIconLicense's own
+         comment covers the one case where a client-added icon has to make
+         do with less). `policy` (not `set.license` directly) is the exact
+         object [prefix]/[name].astro's own attribution snippet reads from,
+         reused here so the two never phrase a set's license differently. */
+      const policy = set?.license.policy ?? null;
+      return {
+        iconId: saved.iconId,
+        prefix,
+        name,
+        body: icon.body,
+        width: icon.width,
+        height: icon.height,
+        tier: set?.tier ?? null,
+        license:
+          set && policy
+            ? {
+                setName: set.name,
+                authorName: set.author.name,
+                authorUrl: set.author.url || null,
+                licenseName: policy.name,
+                licenseSpdx: policy.spdx || null,
+                licenseUrl: policy.url || null,
+                attributionRequired: policy.attributionRequired,
+              }
+            : null,
+      };
+    }),
+  )
+).filter((item): item is NonNullable<typeof item> => item !== null);
+
+const rawStyleSettings = await getCollectionStyleSettings(database, workspace.id, collection.id);
+const styleSettings = {
+  anchorIconId: rawStyleSettings?.anchorIconId ?? null,
+  computedTargets: rawStyleSettings?.computedTargets ?? null,
+  color: rawStyleSettings?.color ?? null,
+  strokeWidth: rawStyleSettings?.strokeWidth ?? null,
+  size: rawStyleSettings?.size ?? null,
+  exportFormat: rawStyleSettings?.exportFormat ?? "svg",
+};
+
+/* The "Add icons" slide-over reuses SearchIsland wholesale - same
+   resting-state data /search.astro
+   loads, so its pastel SetCard grid works identically inside the panel. */
+const sets = (await loadSetList()).sort((a, b) => b.icons - a.icons);
+const categories = (await loadCategories()).sort((a, b) => b.icons - a.icons);
+const setLabels = sets.map((set) => ({ prefix: set.prefix, name: set.name, icons: set.icons }));
+const categoryLabels = categories.map((category) => ({
+  slug: category.slug,
+  tag: category.tag,
+  icons: category.icons,
+}));
+---
+
+<Layout
+  title={`${collection.name} - Motificons`}
+  description={`${collection.name}, a Motificons collection.`}
+  noindex
+>
+  <Header authState={{ signedIn: true, name: Astro.locals.user.name, email: Astro.locals.user.email }} />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <div class="pt-14">
+        <a href="/dashboard" class="text-meta font-semibold text-blue-deep no-underline">
+          &larr; Dashboard
+        </a>
+
+        <CollectionHeaderControls client:load id={collection.id} name={collection.name} />
+      </div>
+
+      {/* Contained, not full-bleed like Banner.astro's usual pattern - this
+          one sits mid-page above the action row and has to keep the same
+          content width as everything else here (the shared container rule,
+          AGENTS.md), so it
+          reuses Banner.astro's visual language (bg-banner, ink text, dismiss
+          x) directly rather than importing the full-bleed component. Dismiss
+          persistence is the generic data-dismissible handler in
+          Layout.astro. */}
+      <div
+        data-dismissible
+        data-dismiss-key="motificons:collection-styles-note-dismissed"
+        class="mt-8 flex flex-wrap items-start gap-4 rounded-card bg-banner px-6 py-4 text-ink"
+      >
+        <p class="min-w-[220px] flex-1 text-body">
+          You can add icons straight from this page with{" "}
+          <strong class="font-bold">Add icons</strong>.{" "}
+          <strong class="font-bold">Set collection styles</strong> gives every icon
+          in this collection one shared look - color, stroke and size - applied
+          when you view and export them.
+        </p>
+        <button
+          type="button"
+          data-dismiss-button
+          aria-label="Dismiss"
+          class="touch-target-inset flex h-11 w-11 shrink-0 items-center justify-center rounded-tag text-ink transition-colors duration-[120ms] ease-in hover:bg-ink/10"
+        >
+          <Icon name="close" size={18} />
+        </button>
+      </div>
+
+      <CollectionWorkspace
+        client:load
+        collectionId={collection.id}
+        collectionName={collection.name}
+        initialItems={iconItems}
+        initialStyleSettings={styleSettings}
+        setLabels={setLabels}
+        categoryLabels={categoryLabels}
+      >
+        <SetGrid sets={sets} />
+      </CollectionWorkspace>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

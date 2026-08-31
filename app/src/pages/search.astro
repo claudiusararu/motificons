@@ -1,0 +1,89 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import SetGrid from "../components/SetGrid.astro";
+import SearchIsland from "../components/react/SearchIsland";
+import { loadCategories, loadSetList } from "../lib/data";
+import { siteStats } from "../lib/site";
+
+/* The library page, and the canonical URL for it.
+   SSR rather than prerendered because a query or a set filter can arrive in
+   the URL; the resting grid is fully server-rendered either way, so crawlers
+   and no-JS visitors get the whole thing and the island only takes over on
+   top of it.
+
+   Every state canonicalises to the clean /search: ?q= and ?sets= are views of
+   one page, not separate pages, and letting them mint their own canonicals
+   would split the signal across thousands of URLs. */
+export const prerender = false;
+const url = new URL(Astro.request.url);
+const query = url.searchParams.get("q") ?? "";
+const facetValues = (...keys: string[]) =>
+  keys
+    .flatMap((key) => url.searchParams.getAll(key))
+    .flatMap((value) => value.split(","))
+    .filter(Boolean);
+const initialSets = facetValues("sets", "prefix");
+const initialStyle = facetValues("style");
+const initialLicense = facetValues("license");
+const initialTier = facetValues("tier");
+const initialNoAttribution = url.searchParams.get("noAttribution") === "1";
+const initialCategory = url.searchParams.get("category") ?? "";
+
+const sets = (await loadSetList()).sort((a, b) => b.icons - a.icons);
+const categories = (await loadCategories()).sort((a, b) => b.icons - a.icons);
+const stats = await siteStats();
+const labels = sets.map((set) => ({
+  prefix: set.prefix,
+  name: set.name,
+  icons: set.icons,
+}));
+const categoryLabels = categories.map((category) => ({
+  slug: category.slug,
+  tag: category.tag,
+  icons: category.icons,
+}));
+---
+
+<Layout
+  title={
+    query
+      ? `${query} icons - Motificons`
+      : `Icon library - ${stats.icons} free icons in ${sets.length} sets`
+  }
+  description={`Search ${stats.icons} open-source icons across ${sets.length} sets, or browse a set. Free to download as SVG or PNG, with SwiftUI and React export.`}
+  canonicalPath="/search"
+>
+  <Header active="icons" />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <h1 class="pt-10 text-h1 font-bold">Icons</h1>
+      <p class="mt-3 text-ink-muted">
+        {stats.icons} icons across {sets.length} sets. Search them all, or pick
+        a set to browse.
+      </p>
+
+      <div class="mt-8">
+        <SearchIsland
+          client:load
+          initialQuery={query}
+          initialSets={initialSets}
+          initialStyle={initialStyle}
+          initialLicense={initialLicense}
+          initialTier={initialTier}
+          initialNoAttribution={initialNoAttribution}
+          initialCategory={initialCategory}
+          basePath="/search"
+          setLabels={labels}
+          categoryLabels={categoryLabels}
+        >
+          <SetGrid sets={sets} />
+        </SearchIsland>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

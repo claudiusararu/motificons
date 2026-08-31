@@ -1,0 +1,181 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Pill from "../../components/Pill.astro";
+import FaqAccordion from "../../components/FaqAccordion.astro";
+import IconEditor from "../../components/react/IconEditor";
+import RelatedIcons from "../../components/react/RelatedIcons";
+import { getIcon, getSet } from "../../lib/data";
+import { TIER_COPY } from "../../lib/tier-copy";
+import { breadcrumbSchema, iconImageUrl, OG_ICON_SIZE } from "../../lib/seo";
+
+/*
+ * SSR, not prerendered. 337,122 icons cannot be built ahead of time - the
+ * build would take hours and produce a tree no filesystem enjoys - so this
+ * route family and the set pages deliberately break the static-by-default
+ * posture. They stay crawlable and unmetered, which is what the SEO rule
+ * (AGENTS.md) actually protects; the cache headers below do the work
+ * prerendering would.
+ */
+export const prerender = false;
+
+const { prefix = "", name = "" } = Astro.params;
+const [icon, set] = await Promise.all([getIcon(prefix, name), getSet(prefix)]);
+
+if (!icon || !set) {
+  return await Astro.rewrite("/404");
+}
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=0, s-maxage=86400, stale-while-revalidate=604800",
+);
+
+const tierCopy = TIER_COPY[set.tier];
+const policy = set.license.policy;
+
+const attribution = `${set.name} by ${set.author.name}${
+  set.author.url ? ` (${set.author.url})` : ""
+}, licensed under ${policy.name}${policy.url ? ` - ${policy.url}` : ""}`;
+
+const title = `${name} icon - ${set.name} | Motificons`;
+const description = `Download the ${name} icon from ${set.name} by ${set.author.name} as SVG, PNG, JSX or SwiftUI. ${policy.attributionRequired ? "Attribution required" : "No attribution required"}, ${policy.name}.`;
+
+const faqs = [
+  {
+    q: `Is the ${name} icon free to use?`,
+    a: `Yes. It is part of ${set.name}, released under ${policy.name}. ${
+      policy.attributionRequired
+        ? "It requires visible attribution in whatever you ship."
+        : "No visible attribution is required, though the license text should stay with your source."
+    }${policy.nonCommercial ? " Commercial use is not permitted under this license." : ""}`,
+  },
+  {
+    q: `Can I change the color of the ${name} icon?`,
+    a: tierCopy.recolorAnswer,
+  },
+  {
+    q: `Can I use the ${name} icon in a SwiftUI app?`,
+    a: tierCopy.swiftAnswer,
+  },
+  {
+    q: `What formats can I export the ${name} icon in?`,
+    a: "SVG, PNG at any size up to 2048px, a React JSX or TSX component, a base64 data URI, and an Xcode asset catalog. SwiftUI code is available where the artwork allows it.",
+  },
+];
+
+/* Same trail the visible breadcrumb nav below renders - see seo.ts. */
+const breadcrumbs = breadcrumbSchema([
+  { name: "Icons", path: "/search" },
+  { name: set.name, path: `/${prefix}` },
+  { name, path: `/${prefix}/${name}` },
+]);
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonicalPath={`/${prefix}/${name}`}
+  ogImage={iconImageUrl(prefix, name)}
+  ogImageWidth={OG_ICON_SIZE}
+  ogImageHeight={OG_ICON_SIZE}
+  ogType="article"
+  noindex
+  posthog={false}
+>
+  <Header active="icons" />
+
+  {/* One BreadcrumbList per page, built from the same trail as the nav
+      below it. */}
+  <script type="application/ld+json" is:inline set:html={breadcrumbs} />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <nav aria-label="Breadcrumb" class="pt-8 text-meta text-ink-muted">
+        <a href="/search" class="prose-link">Icons</a>
+        <span aria-hidden="true"> / </span>
+        <a href={`/${prefix}`} class="prose-link">{set.name}</a>
+        <span aria-hidden="true"> / </span>
+        <span>{name}</span>
+      </nav>
+
+      <h1 class="mt-6 text-h1 font-bold">{name}</h1>
+      <p class="mt-3 text-ink-muted">
+        By {set.author.name} in <a href={`/${prefix}`} class="prose-link">{set.name}</a>
+      </p>
+
+      <div class="mt-5 flex flex-wrap gap-2">
+        <Pill variant="yellow" data-tier={set.tier}>{tierCopy.label}</Pill>
+        <Pill variant="teal">{set.license.spdx || set.license.title}</Pill>
+        {!policy.attributionRequired && <Pill variant="teal">No attribution</Pill>}
+        {policy.attributionRequired && <Pill variant="blue">Attribution required</Pill>}
+        {set.brand && <Pill variant="gray">Brand mark</Pill>}
+      </div>
+
+      {/* Preview left / controls right above the fold, capability card and
+          the format preview panel full-width below - all one React island so
+          the format panel can stay live with the controls' state without a
+          cross-island store. */}
+      <div class="mt-8">
+        <IconEditor client:load icon={icon} tier={set.tier} />
+      </div>
+
+      {/* Related icons are fetched and rendered client-side, after this page's
+          SSR finishes - see RelatedIcons + /api/related. Keeps the page render
+          cheap (the shard search was blowing the Worker CPU limit and 500-ing
+          the whole page on long names). client:visible defers the fetch until
+          the row scrolls into view. */}
+      <RelatedIcons client:visible prefix={prefix} name={name} />
+
+      <FaqAccordion faqs={faqs} class="mt-16" />
+
+      {/* License, deliberately last on the page: everything above is about
+          using the icon, this is the fine print backing it up. */}
+      <section class="mt-16 rounded-card bg-surface px-8 py-7 text-ink shadow-card">
+        <h2 class="text-h2 font-semibold">License</h2>
+        <p class="mt-3 text-ink-muted">
+          {policy.name}{policy.url && (
+            <>
+              {" - "}
+              <a
+                href={policy.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="prose-link">read it</a>
+            </>
+          )}
+        </p>
+        <ul class="mt-4 flex flex-col gap-2 text-ink-muted">
+          <li>
+            {policy.attributionRequired
+              ? "Visible attribution is required where you use it."
+              : "No visible attribution required."}
+          </li>
+          {policy.noticeRequired && <li>Keep the license notice with your source.</li>}
+          {policy.shareAlike && <li>Derivatives must keep the same license.</li>}
+          {policy.nonCommercial && <li>Non-commercial use only.</li>}
+          {
+            set.brand && (
+              <li>
+                This is a third-party brand mark. The license covers the
+                artwork, not the trademark - follow the owner's brand
+                guidelines.
+              </li>
+            )
+          }
+        </ul>
+        <p class="mt-5 text-pill font-bold text-ink-muted uppercase">
+          Attribution snippet
+        </p>
+        <p
+          class="mt-2 rounded-control bg-canvas px-4 py-3 font-mono text-meta break-words"
+        >
+          {attribution}
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

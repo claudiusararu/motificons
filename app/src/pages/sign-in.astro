@@ -1,0 +1,66 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Card from "../components/Card.astro";
+import AuthCard from "../components/react/AuthCard";
+import { configuredProviders } from "../lib/auth/auth";
+import { turnstileConfig } from "../lib/auth/turnstile";
+
+/* SSR: needs Astro.locals.user (populated by src/middleware.ts) to redirect
+   an already-signed-in visitor straight past the form, and needs the
+   server-checked provider env vars before it can decide which OAuth buttons
+   exist at all. */
+export const prerender = false;
+
+if (Astro.locals.user) {
+  return Astro.redirect("/dashboard");
+}
+
+const providers = await configuredProviders();
+/* Site key is public by design; the secret half never leaves the server. */
+const { siteKey: turnstileSiteKey } = await turnstileConfig();
+---
+
+<Layout
+  title="Sign in - Motificons"
+  description="Sign in to your free Motificons account - magic link, Google, GitHub or Apple."
+  noindex
+>
+  <Header />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <div class="mx-auto w-full max-w-[440px] py-16">
+        <div class="mb-8 text-center">
+          <h1 class="text-h2 font-bold">Sign in</h1>
+          <p class="mt-2 text-body text-ink-muted">
+            Sign in to reach your collections, style settings and MCP key.
+          </p>
+        </div>
+
+        <Card>
+          <AuthCard
+            client:load
+            mode="signin"
+            providers={providers}
+            callbackURL="/dashboard"
+            turnstileSiteKey={turnstileSiteKey}
+          />
+        </Card>
+
+        <p class="mt-6 text-center text-meta text-ink-muted">
+          No account yet?{" "}
+          <a
+            href="/register"
+            class="font-semibold text-blue-deep underline underline-offset-2"
+          >
+            Create a free one
+          </a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

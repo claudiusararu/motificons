@@ -1,0 +1,50 @@
+---
+import type { SetMetadata } from "../lib/data";
+import { setCardSentence } from "../lib/set-copy";
+import { tintFor } from "../lib/set-card-tint";
+
+interface Props {
+  set: SetMetadata;
+}
+
+const { set } = Astro.props;
+const tint = tintFor(set.prefix);
+/* Glyph markup ships inside sets.json, so a 239-card grid costs no reads. */
+const glyphs = set.sampleGlyphs.slice(0, 6);
+---
+
+{/* Set card: Open Color level-3 tint with its level-8 sibling as the
+    hard shadow (the same relationship the colored-card rule uses), six
+    sample glyphs in white chips, then plain language. No tier codes and no
+    SPDX ids - those live on the set page next to their explainers, where a
+    visitor can learn what they mean. */}
+<a
+  href={`/${set.prefix}`}
+  data-set-prefix={set.prefix}
+  class="set-card block rounded-card px-6 py-6 text-ink no-underline"
+  style={`background-color:${tint.background};--set-shadow:${tint.shadow}`}
+>
+  <div class="grid grid-cols-3 gap-2.5">
+    {
+      glyphs.map((glyph) => (
+        <span class="flex size-11 items-center justify-center rounded-control bg-surface">
+          <svg
+            width="22"
+            height="22"
+            viewBox={`0 0 ${glyph.width} ${glyph.height}`}
+            aria-hidden="true"
+            set:html={glyph.body}
+          />
+        </span>
+      ))
+    }
+  </div>
+
+  <h3 class="mt-6 text-h3 font-semibold">{set.name}</h3>
+  <p class="mt-1 text-meta">
+    {set.icons.toLocaleString("en-US")} icons by {set.author.name}
+  </p>
+  <p class="mt-3 text-meta">
+    {setCardSentence(set.tier, set.attributionRequired)}
+  </p>
+</a>

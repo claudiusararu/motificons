@@ -1,0 +1,71 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Card from "../components/Card.astro";
+import Pill from "../components/Pill.astro";
+import { loadCategories } from "../lib/data";
+import { siteStats } from "../lib/site";
+
+/* Prerendered: one page built from categories.json, which only changes when
+   the pipeline runs. No search dependency, so it renders even if Meilisearch
+   is down - it is an SEO surface first. */
+const categories = await loadCategories();
+const stats = await siteStats();
+
+const featured = categories.slice(0, 24);
+const rest = categories.slice(24);
+---
+
+<Layout
+  title={`Icon categories - browse ${stats.icons} icons by topic`}
+  description={`Browse ${stats.icons} open-source icons across ${stats.categories} categories. Arrows, weather, social, files and more - every category free and unmetered.`}
+>
+  <Header active="categories" />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <h1 class="pt-10 text-h1 font-bold">Categories</h1>
+      <p class="mt-4 text-ink-muted">
+        {stats.categories} categories across {stats.sets} sets. Categories come
+        from the icon authors themselves, not from us guessing, so an icon
+        appears where its designer filed it. Browsing is free and unmetered.
+      </p>
+
+      <section class="mt-12">
+        <h2 class="text-h2 font-semibold">Biggest categories</h2>
+        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {
+            featured.map((category) => (
+              <Card variant="standard" href={`/category/${category.slug}`}>
+                <h3 class="text-h3 font-semibold">{category.tag}</h3>
+                <p class="mt-1 text-meta text-ink-muted">
+                  {category.icons.toLocaleString("en-US")} icons in{" "}
+                  {category.sets.length}{" "}
+                  {category.sets.length === 1 ? "set" : "sets"}
+                </p>
+              </Card>
+            ))
+          }
+        </div>
+      </section>
+
+      {
+        rest.length > 0 && (
+          <section class="mt-16">
+            <h2 class="text-h2 font-semibold">Every category</h2>
+            <div class="mt-8 flex flex-wrap gap-2">
+              {rest.map((category) => (
+                <Pill href={`/category/${category.slug}`} variant="gray">
+                  {category.tag}
+                </Pill>
+              ))}
+            </div>
+          </section>
+        )
+      }
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

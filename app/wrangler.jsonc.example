@@ -1,0 +1,89 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "motificons",
+  // Add your Cloudflare account id here, or delete this line - wrangler
+  // infers the account from your `wrangler login` session.
+  "account_id": "YOUR_CLOUDFLARE_ACCOUNT_ID",
+  // main/assets are supplied by the Astro adapter at build time; this file
+  // adds the bindings and flags on top.
+  "compatibility_date": "2026-08-01",
+
+  // nodejs_compat gives us Buffer, which the zip writer and the base64
+  // data-URI encoder use. Nothing here depends on node:fs - the dev disk
+  // driver is compiled out of this bundle (see app/src/lib/storage.ts).
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Serve /agents rather than redirecting it to /agents/. The default
+  // auto-trailing-slash handling 307s to the directory form, which
+  // disagrees with the canonical every page advertises.
+  "assets": {
+    "html_handling": "drop-trailing-slash"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  // Custom domain, attached on every `wrangler deploy`. Requires the domain
+  // to already be an active zone on your Cloudflare account. Replace with
+  // your own domain, or remove "routes" entirely to deploy on workers.dev.
+  "routes": [
+    { "pattern": "your-domain.example", "custom_domain": true }
+  ],
+
+  // Icon bodies and search shards - everything too large to embed in the
+  // Worker bundle. Create your own R2 buckets (`wrangler r2 bucket create`)
+  // and put their names here.
+  "r2_buckets": [
+    {
+      "binding": "ICONS",
+      "bucket_name": "YOUR_ICONS_BUCKET",
+      "preview_bucket_name": "YOUR_ICONS_PREVIEW_BUCKET"
+    }
+  ],
+
+  // Anonymous search meter counters. Values are per identity per day and
+  // expire on their own. Create your own KV namespaces
+  // (`wrangler kv namespace create <NAME>`) and paste the ids here.
+  "kv_namespaces": [
+    {
+      "binding": "METER",
+      "id": "YOUR_METER_KV_ID",
+      "preview_id": "YOUR_METER_KV_PREVIEW_ID"
+    },
+    // Astro 5's built-in session API, wired through @astrojs/cloudflare.
+    // Nothing in this app calls Astro.session (Better Auth owns sign-in
+    // state via its own cookie), but the adapter enables a session driver
+    // unconditionally and injects an id-less "SESSION" binding at build
+    // time when one is not already present - an id-less KV binding is a
+    // real deploy risk, so pin a real namespace here the same way METER is.
+    {
+      "binding": "SESSION",
+      "id": "YOUR_SESSION_KV_ID",
+      "preview_id": "YOUR_SESSION_KV_PREVIEW_ID"
+    }
+  ],
+
+  // Accounts and collections. Relational data with tiny query volume -
+  // explicitly NOT the search engine. Create with `wrangler d1 create
+  // motificons` and paste the database id here AND in
+  // mcp/wrangler.jsonc - both must match.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "motificons",
+      "database_id": "YOUR_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Cloudflare Turnstile's public half - the human check in front of the
+  // magic-link send. Leave it empty and the widget never renders and the
+  // server check stays off (fail open). To switch it on: create a widget in
+  // the Cloudflare dashboard (Turnstile), paste its site key here, and set
+  // the other half with `wrangler secret put TURNSTILE_SECRET`.
+  "vars": {
+    "PUBLIC_SITE_ORIGIN": "https://your-domain.example",
+    "PUBLIC_TURNSTILE_SITE_KEY": ""
+  }
+}

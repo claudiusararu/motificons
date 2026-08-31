@@ -1,0 +1,239 @@
+---
+import { Code } from "astro:components";
+import Icon from "./Icon.astro";
+import { motificonsDark, type CodeLanguage } from "../lib/code-theme";
+
+export interface CodeTab {
+  label: string;
+  code: string;
+  lang?: CodeLanguage;
+}
+
+export interface CodeFooterLink {
+  label: string;
+  href: string;
+  external?: boolean;
+}
+
+interface Props {
+  tabs: CodeTab[];
+  footerLinks?: CodeFooterLink[];
+  class?: string;
+}
+
+const { tabs, footerLinks = [], class: className } = Astro.props;
+
+/* Stable per-instance ids so tab/panel wiring survives multiple panels. */
+const uid = crypto.randomUUID().slice(0, 8);
+const tabId = (index: number) => `code-${uid}-tab-${index}`;
+const panelId = (index: number) => `code-${uid}-panel-${index}`;
+
+---
+
+{/* Code panel: navy body, uppercase tab row with a 3px yellow
+    underline on the active tab, mono 16px, one-click copy, darker meta strip.
+    Accessibility: the WAI-ARIA tabs pattern and a polite live region for copy.
+    .on-navy flips the focus ring to yellow for everything inside. */}
+<div
+  data-code-panel
+  class:list={[
+    "on-navy overflow-hidden rounded-card bg-ink text-on-dark",
+    className,
+  ]}
+>
+  <div class="flex items-start justify-between gap-4 pr-4">
+    <div role="tablist" aria-label="Code format" class="flex flex-wrap">
+      {
+        tabs.map((tab, index) => (
+          <button
+            type="button"
+            role="tab"
+            id={tabId(index)}
+            aria-controls={panelId(index)}
+            aria-selected={index === 0 ? "true" : "false"}
+            tabindex={index === 0 ? 0 : -1}
+            data-code-tab
+            data-index={index}
+            class="border-b-[3px] border-transparent px-5 py-4 text-pill font-bold text-white/60 uppercase transition-colors duration-[120ms] ease-in hover:text-white/85 aria-selected:border-primary aria-selected:text-white"
+          >
+            {tab.label}
+          </button>
+        ))
+      }
+    </div>
+
+    <button
+      type="button"
+      data-code-copy
+      class="touch-target mt-3 inline-flex shrink-0 items-center justify-center gap-2 rounded-control border-2 border-white/40 px-3 py-[9px] text-pill font-bold text-on-dark uppercase transition-colors duration-[120ms] ease-in hover:border-white/65"
+    >
+      <span class="inline-flex items-center gap-2" data-copy-idle>
+        <Icon name="copy" size={14} />
+        Copy
+      </span>
+      <span class="hidden items-center gap-2 text-teal" data-copy-done>
+        <Icon name="check" size={14} />
+        Copied
+      </span>
+    </button>
+  </div>
+
+  {/* Shiki's own <pre> is the scroll container and carries tabindex=0, so the
+      panels must not add a second one of either. */}
+  <div class="px-6 pb-6">
+    {
+      tabs.map((tab, index) => (
+        <div
+          role="tabpanel"
+          id={panelId(index)}
+          aria-labelledby={tabId(index)}
+          data-code-pane
+          hidden={index !== 0}
+        >
+          <Code
+            code={tab.code}
+            lang={tab.lang ?? "plaintext"}
+            theme={motificonsDark}
+            class="scroll-dark font-mono text-code"
+          />
+        </div>
+      ))
+    }
+  </div>
+
+  {/* Announced politely on copy; kept in the DOM so the update is heard. */}
+  <span class="sr-only" role="status" aria-live="polite" data-copy-live></span>
+
+  {
+    footerLinks.length > 0 && (
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2 bg-ink-deep px-6 py-4 text-meta text-on-dark-muted">
+        {footerLinks.map((link) => (
+          <a
+            href={link.href}
+            {...(link.external
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+            class="underline decoration-1 underline-offset-2 transition-colors duration-[120ms] ease-in hover:text-on-dark"
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+    )
+  }
+</div>
+
+<script>
+  document
+    .querySelectorAll<HTMLElement>("[data-code-panel]")
+    .forEach((panel) => {
+      const tabs = Array.from(
+        panel.querySelectorAll<HTMLButtonElement>("[data-code-tab]"),
+      );
+      const panes = Array.from(
+        panel.querySelectorAll<HTMLElement>("[data-code-pane]"),
+      );
+
+      const select = (index: number, moveFocus: boolean) => {
+        tabs.forEach((tab, tabIndex) => {
+          const isTarget = tabIndex === index;
+          tab.setAttribute("aria-selected", String(isTarget));
+          tab.tabIndex = isTarget ? 0 : -1;
+        });
+        panes.forEach((pane, paneIndex) => {
+          pane.hidden = paneIndex !== index;
+        });
+        if (moveFocus) tabs[index]?.focus();
+      };
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => select(index, false));
+
+        tab.addEventListener("keydown", (event) => {
+          const step =
+            event.key === "ArrowRight" || event.key === "ArrowDown"
+              ? 1
+              : event.key === "ArrowLeft" || event.key === "ArrowUp"
+                ? -1
+                : 0;
+
+          let next = -1;
+          if (step !== 0) {
+            next = (index + step + tabs.length) % tabs.length;
+          } else if (event.key === "Home") {
+            next = 0;
+          } else if (event.key === "End") {
+            next = tabs.length - 1;
+          } else {
+            return;
+          }
+
+          event.preventDefault();
+          select(next, true);
+        });
+      });
+
+      const copyButton = panel.querySelector<HTMLButtonElement>(
+        "[data-code-copy]",
+      );
+      const idle = panel.querySelector<HTMLElement>("[data-copy-idle]");
+      const done = panel.querySelector<HTMLElement>("[data-copy-done]");
+      const live = panel.querySelector<HTMLElement>("[data-copy-live]");
+      if (!copyButton || !idle || !done || !live) return;
+
+      let resetTimer: number | undefined;
+
+      const writeToClipboard = async (text: string) => {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          // Clipboard API needs a secure context; fall back to a scratch node.
+          const legacy = document as unknown as {
+            execCommand?: (command: string) => boolean;
+          };
+          if (!legacy.execCommand) return false;
+
+          const scratch = document.createElement("textarea");
+          scratch.value = text;
+          scratch.setAttribute("readonly", "");
+          scratch.style.position = "fixed";
+          scratch.style.opacity = "0";
+          document.body.appendChild(scratch);
+          scratch.select();
+          const copied = legacy.execCommand("copy");
+          document.body.removeChild(scratch);
+          return copied;
+        }
+      };
+
+      copyButton.addEventListener("click", async () => {
+        const activePane = panes.find((pane) => !pane.hidden);
+        const code = activePane?.querySelector("code")?.textContent ?? "";
+        const label =
+          panel
+            .querySelector('[data-code-tab][aria-selected="true"]')
+            ?.textContent?.trim() ?? "Code";
+
+        if (!(await writeToClipboard(code))) {
+          live.textContent = "Copy failed. Select the code and copy manually.";
+          return;
+        }
+
+        idle.classList.add("hidden");
+        idle.classList.remove("inline-flex");
+        done.classList.remove("hidden");
+        done.classList.add("inline-flex");
+        live.textContent = `${label} copied to clipboard`;
+
+        window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => {
+          done.classList.add("hidden");
+          done.classList.remove("inline-flex");
+          idle.classList.remove("hidden");
+          idle.classList.add("inline-flex");
+          live.textContent = "";
+        }, 1600);
+      });
+    });
+</script>

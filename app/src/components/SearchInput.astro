@@ -1,0 +1,99 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  /** Query param name. */
+  name?: string;
+  /** Kept generic on purpose: icon counts are pipeline data, never hardcoded. */
+  placeholder?: string;
+  value?: string;
+  id?: string;
+  label?: string;
+  action?: string;
+  autofocus?: boolean;
+  /** Error message. Paints the danger border and renders the message below. */
+  error?: string;
+  /** Success message. Paints the teal-deep border and a check. */
+  success?: string;
+  class?: string;
+}
+
+const {
+  name = "q",
+  placeholder = "Search icons",
+  value,
+  id = "search",
+  label = "Search icons",
+  action = "/search",
+  autofocus = false,
+  error,
+  success,
+  class: className,
+} = Astro.props;
+
+const messageId = `${id}-message`;
+
+/* Error is a --danger border plus a 14px message with an icon, never
+   pale. Success confirms with a teal border and check. --teal-deep carries the
+   teal role here because #63E6BE is 1.6:1 on white and cannot meet the 3:1
+   minimum for a control boundary; #099268 is 3.6:1. */
+const borderClass = error
+  ? "border-danger"
+  : success
+    ? "border-teal-deep"
+    : "border-ink";
+---
+
+{/* Search input: radius 32px, 2px ink border, pad 18px 24px,
+    leading icon inset to 55px, focus adds a 4px hard shadow on top of the
+    global focus outline. */}
+<form
+  role="search"
+  action={action}
+  method="get"
+  class:list={["w-full", className]}
+>
+  <label class="sr-only" for={id}>{label}</label>
+  <div class="relative">
+    <Icon
+      name="search"
+      size={22}
+      class="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-ink-muted"
+    />
+    <input
+      type="search"
+      id={id}
+      name={name}
+      value={value}
+      placeholder={placeholder}
+      autocomplete="off"
+      autofocus={autofocus}
+      aria-invalid={error ? "true" : undefined}
+      aria-describedby={error || success ? messageId : undefined}
+      class:list={[
+        "w-full appearance-none rounded-pill border-2 bg-surface py-[18px] pr-6 pl-[55px] text-body text-ink transition-shadow duration-[120ms] ease-in placeholder:text-ink-muted focus:shadow-card",
+        borderClass,
+      ]}
+    />
+  </div>
+
+  {
+    (error || success) && (
+      <p
+        id={messageId}
+        role={error ? "alert" : "status"}
+        class:list={[
+          "mt-3 flex items-center gap-2 pl-6 text-meta",
+          error ? "text-danger" : "text-ink",
+        ]}
+      >
+        <Icon
+          name={error ? "alert" : "check"}
+          size={16}
+          class:list={["shrink-0", error ? "text-danger" : "text-teal-deep"]}
+        />
+        {error ?? success}
+      </p>
+    )
+  }
+</form>

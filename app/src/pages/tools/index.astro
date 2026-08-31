@@ -1,0 +1,55 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import Button from "../../components/Button.astro";
+import Card from "../../components/Card.astro";
+import { TOOLS } from "./_tool-data";
+import { siteStats } from "../../lib/site";
+
+const stats = await siteStats();
+---
+
+<Layout
+  title="Free SVG tools - JSX, TSX, Vue, Svelte, SwiftUI, PNG, data URI"
+  description="Free SVG converters with no signup and no watermark: JSX, TSX, Vue, Svelte, SwiftUI, PNG at any size, and data URI."
+>
+  <Header active="tools" />
+
+  <main id="main" class="pb-24">
+    <div class="page-container">
+      <h1 class="pt-10 text-h1 font-bold">Free SVG tools</h1>
+      <p class="mt-4 text-ink-muted">
+        {TOOLS.length} converters, no signup and no watermark. They are the
+        same transforms that run on every one of our {stats.icons} icon
+        pages, so what you get here is what the library gives you.
+      </p>
+
+      <div class="mt-10 grid gap-6 md:grid-cols-3">
+        {
+          TOOLS.map((tool) => (
+            <Card variant="standard" href={`/tools/${tool.slug}`}>
+              <h2 class="text-h3 font-semibold">{tool.name}</h2>
+              <p class="mt-2 text-meta text-ink-muted">{tool.lead}</p>
+            </Card>
+          ))
+        }
+      </div>
+
+      <Card variant="inverted" class="mt-16">
+        <h2 class="text-h3 font-semibold">Or skip the pasting</h2>
+        <p class="mt-3 text-meta text-on-dark-muted">
+          Every icon page has these conversions built in, plus batch export and
+          a style engine that normalizes a whole collection at once. All of it
+          is free.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <Button href="/search">Browse icons</Button>
+          <Button variant="secondary" href="/register">Create a free account</Button>
+        </div>
+      </Card>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

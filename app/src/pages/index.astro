@@ -1,0 +1,501 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Button from "../components/Button.astro";
+import Card from "../components/Card.astro";
+import FaqAccordion from "../components/FaqAccordion.astro";
+import HeroGlyphField from "../components/HeroGlyphField.astro";
+import Icon from "../components/Icon.astro";
+import Pill from "../components/Pill.astro";
+import SearchInput from "../components/SearchInput.astro";
+import StatCard from "../components/StatCard.astro";
+import { loadSets } from "../lib/data";
+import {
+  opticalStrokeTarget,
+  retargetStroke,
+  strokeRatio,
+} from "../lib/transforms/stroke";
+import { buildInlineSvg } from "../lib/transforms/svg-doc";
+import { EXPORT_FORMATS } from "../lib/transforms";
+import { siteStats, type Faq as FaqItem } from "../lib/site";
+import { ANON_DAILY_LIMIT } from "../lib/search/meter-kv";
+
+/*
+ * Homepage. The page's job is to explain what the product does and let a
+ * visitor start searching - nothing here sells anything, because there is
+ * nothing to sell.
+ */
+
+const stats = await siteStats();
+
+/* The anchor as a ratio of the grid, not a raw number: 1.5 on a 24 grid.
+   Normalizing the number alone left the 48-grid set at half the weight of the
+   others - see opticalStrokeTarget. */
+const ANCHOR_RATIO = strokeRatio(1.5, 24);
+
+/* Four T1 sets whose native stroke widths genuinely differ - 1 (implicit),
+   1.5, 2 and 4 - so the comparison is about weight rather than scale. Glyphs
+   come from sets.json, which means this prerenders without touching the body
+   store: no page built ahead of time needs object storage. */
+/* The glyph is named, not taken by index: icon-park-outline's first sample is
+   a circled plus, and a large thin circle normalizes to something optically
+   lighter than the compound shapes beside it - which broke the uniformity the
+   after-row exists to demonstrate. A bolt has no dominant circle and holds its
+   weight at the anchor stroke. */
+const SAMPLE_SETS: { prefix: string; glyph: string }[] = [
+  { prefix: "system-uicons", glyph: "bell" },
+  { prefix: "iconoir", glyph: "chat-bubble-check" },
+  { prefix: "tabler", glyph: "alien" },
+  { prefix: "icon-park-outline", glyph: "lightning" },
+];
+
+const sets = await loadSets();
+const samples = SAMPLE_SETS.flatMap(({ prefix, glyph: wanted }) => {
+  const set = sets.get(prefix);
+  const glyph =
+    set?.sampleGlyphs.find((entry) => entry.name === wanted) ??
+    set?.sampleGlyphs[0];
+  if (!glyph) return [];
+  const icon = {
+    prefix,
+    name: glyph.name,
+    body: glyph.body,
+    width: glyph.width,
+    height: glyph.height,
+  };
+  return [
+    {
+      prefix,
+      before: buildInlineSvg(icon, {}, "T1", 'width="34" height="34"'),
+      after: buildInlineSvg(
+        {
+          ...icon,
+          body: retargetStroke(
+            icon.body,
+            opticalStrokeTarget(ANCHOR_RATIO, icon.width),
+          ),
+        },
+        {},
+        "T1",
+        'width="34" height="34"',
+      ),
+    },
+  ];
+});
+
+/* "Is this free" is the first thing a visitor lands on this page wanting
+   answered, so it leads the FAQ. */
+const faqs: FaqItem[] = [
+  {
+    q: "Is Motificons free?",
+    a: `Yes, all of it. Browsing and downloading need no account - every icon, set and category page stays open. Search has a daily allowance of ${ANON_DAILY_LIMIT} without an account, to keep it fast for everyone. A free account lifts that and adds 5 collections plus an MCP key for your coding agent.`,
+  },
+  {
+    q: "If the icons are open source, what does Motificons actually add?",
+    a: "The icons are open source and stay that way - anyone can download them from the projects that made them, and nothing here takes that away. What Motificons adds is everything around them. The style engine makes icons from different sets match one look, so a screen built from four libraries stops looking like it was. The exports are production-ready rather than raw files: SwiftUI code and Xcode asset catalogs, React, Vue and Svelte components, PNG at any size, CSS. And the MCP server lets a coding agent search the collection you curated and use it, instead of picking whatever icon it happened to find.",
+  },
+  {
+    q: "Can I use these icons commercially?",
+    a: `Almost always yes. Every icon is open source, and ${stats.noAttributionPercent}% of them need no visible credit at all. A small number of sets are non-commercial or share-alike, and those are labelled on every icon page. You can also filter search to icons that need no attribution, and each icon gives you a ready-made attribution snippet to copy.`,
+  },
+  {
+    q: "How does the style engine actually work?",
+    a: "You pick one icon from a collection as that collection's style anchor. Motificons reads its stroke width, proportions and palette, then applies that target to every other icon in it, across all sets. Stroke-based sets can be fully retargeted; sets drawn as filled shapes can be recolored and resized but have no stroke to change. Every icon page states which it is, so you always know what you are getting.",
+  },
+  {
+    q: "How do coding agents connect to it?",
+    a: "Over MCP. You point Claude Code, Codex or Cursor at the Motificons server, and your agent can search the library by intent, pull from the collections you curated, and get code in that collection's format. It can also write what it picked back into a collection, so the library and the codebase stay in step.",
+  },
+  {
+    q: "What formats can I export to?",
+    a: `${EXPORT_FORMATS.length}: ${EXPORT_FORMATS.map((format) => format.label).join(", ")}. SwiftUI code is generated where the artwork allows it, and every icon without exception exports as an asset catalog that stays crisp at any size.`,
+  },
+  {
+    q: "How many icons are there really?",
+    a: `${stats.icons} icons across ${stats.sets} sets, in ${stats.categories} categories. That number comes from the pipeline that builds the library, not from a marketing page - when the upstream sets change, so does the number.`,
+  },
+];
+---
+
+<Layout
+  title="Motificons - any icon, your style, every platform"
+  description={`${stats.icons} open-source icons normalized to your style and delivered to React, SwiftUI and your coding agents.`}
+>
+  <Header />
+
+  <main id="main">
+    {/* 1 - Hero: the stat row used to be its own section
+        on the plain canvas; it now lives inside the hero so the glyph field
+        and the #94d0ff fill run underneath it too - one surface, no seam at
+        the old section boundary. Cards are unchanged, just relocated. */}
+    <section
+      class="relative overflow-hidden pt-16 pb-20"
+      style="background-color:#94d0ff"
+    >
+      <HeroGlyphField />
+
+      <div class="page-container relative">
+        <Pill variant="blueDeep">Open-source icon library</Pill>
+
+        <h1 class="mt-6 text-h2 font-bold text-ink-deep sm:text-hero">
+          Any icon. Your style. Every platform.
+        </h1>
+        <p class="mt-5 text-ink-deep">
+          Search {stats.icons} open-source icons. Choose the look you want,
+          then export a consistent icon system for web, SwiftUI, or your
+          coding agent.
+        </p>
+
+        <div class="mt-9">
+          {/* Suggestions rather than a count: they teach the search box and
+              they keep the number to the two places it earns. Every example
+              is a real icon name. */}
+          <SearchInput
+            id="hero-search"
+            placeholder="Try: arrow, invoice, settings..."
+          />
+        </div>
+
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <Button href="/search">Browse the library</Button>
+          <Button variant="secondary" href="/agents">
+            <Icon name="sparkle" slot="icon" />
+            Connect your agent
+          </Button>
+        </div>
+
+        {/* Same four cards as before (white surface, shadow, accent tail,
+            muted label), same grid - only the surface they sit on moved.
+            White is opaque, so the label's ink-muted still clears its usual
+            contrast regardless of the hero fill behind the card. */}
+        <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard value={stats.icons} label="Open-source icons" accent="blue" />
+          <StatCard value={stats.sets} label="Icon sets" accent="teal" />
+          <StatCard
+            value={`${stats.restyleablePercent}%`}
+            suffix=""
+            label="Restyleable to your look"
+            accent="grape"
+          />
+          <StatCard
+            value={String(EXPORT_FORMATS.length)}
+            suffix=""
+            label="Export formats"
+            accent="violet"
+          />
+        </div>
+      </div>
+    </section>
+
+    {/* 3 - Style engine */}
+    <section class="bg-surface py-20">
+      <div class="page-container">
+        <h2 class="text-h2 font-semibold">Pick one icon. The rest follow.</h2>
+        <p class="mt-4 text-ink">
+          Choose one icon as your visual reference. Motificons adjusts the
+          stroke, size and color of the icons you use, then exports
+          production-ready code for React, SwiftUI, Vue, Svelte, or your
+          coding agent.
+        </p>
+
+        <div class="mt-10 grid gap-6 md:grid-cols-2">
+          <div class="rounded-card bg-canvas px-8 py-7">
+            <p class="text-pill font-bold text-ink uppercase">
+              Four sets, four stroke weights
+            </p>
+            <div class="mt-5 flex flex-wrap items-center gap-5 text-ink">
+              {samples.map((sample) => <Fragment set:html={sample.before} />)}
+            </div>
+          </div>
+
+          {/* Tinted so the result reads as the result. Teal rather than the
+              brand yellow, which V2 reserves for the primary CTA. */}
+          <div
+            class="rounded-card px-8 py-7"
+            style="background-color:#C3FAE8;box-shadow:0 4px 0 0 #63E6BE"
+          >
+            <p class="text-pill font-bold text-ink uppercase">
+              Normalized to one anchor
+            </p>
+            <div class="mt-5 flex flex-wrap items-center gap-5 text-ink">
+              {samples.map((sample) => <Fragment set:html={sample.after} />)}
+            </div>
+          </div>
+        </div>
+
+        <p class="mt-6 text-h3 font-semibold text-ink">No more icon soup.</p>
+
+        <p class="mt-3 text-meta text-ink-muted">
+          Full restyling on stroke-based sets; recolor and resize on the rest.
+          Every icon shows what it supports.
+        </p>
+
+        {/* Mac app banner: blue accent card, benefit-led copy. It sits
+            inside this section rather than standing alone. */}
+        <Card
+          variant="blue"
+          class="mt-10 flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div class="flex items-center gap-5">
+            <img
+              src="/app/app-icon.png"
+              width="72"
+              height="72"
+              alt=""
+              class="h-18 w-18 shrink-0 rounded-[10px] border-2 border-blue-deep shadow-[0_4px_0_0_var(--color-blue-deep)]"
+            />
+            <div>
+              <h3 class="text-h3 font-bold text-ink">
+                Speed up your workflow
+              </h3>
+              <p class="mt-1 text-meta text-ink">
+                Stop losing minutes to tabs, downloads and cleanup every
+                time you need an icon. One shortcut in Figma, Photoshop or
+                your editor and it's on your clipboard - two seconds, flow
+                intact. The Mac app is free too.
+              </p>
+            </div>
+          </div>
+
+          <Button href="/app" class="shrink-0">
+            Watch the Mac app in action
+          </Button>
+        </Card>
+      </div>
+    </section>
+
+    {/* 4 - Native export */}
+    <section class="py-20">
+      <div class="page-container">
+        <h2 class="text-h2 font-semibold">
+          One library. Native output. Every stack.
+        </h2>
+        <p class="mt-4 text-ink">
+          Whatever you build with, the icons arrive in the form your code
+          already expects: SwiftUI shapes and asset catalogs for Xcode,
+          ready-made components for React, Vue and Svelte, and plain SVG, PNG
+          or CSS for everything else. Nobody has to convert anything by hand.
+        </p>
+
+        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <Card variant="blue">
+            <Icon name="bolt" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">SwiftUI Shape</h3>
+            <p class="mt-2 text-meta">
+              Real path code you can fill, stroke and animate like any built-in
+              shape. Drop it straight into a view.
+            </p>
+          </Card>
+
+          <Card variant="teal">
+            <Icon name="download" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">Asset catalog</h3>
+            <p class="mt-2 text-meta">
+              Every icon, including the ones no generator can honestly turn
+              into code. Vector data preserved, crisp at any size.
+            </p>
+          </Card>
+
+          <Card variant="violet">
+            <Icon name="grid" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">React, Vue &amp; Svelte</h3>
+            <p class="mt-2 text-meta">
+              Ready-made components: JSX and typed TSX, a Vue single-file
+              component, a Svelte file. Size and color are props, and the icon
+              follows your text color unless you say otherwise.
+            </p>
+          </Card>
+
+          <Card variant="grape">
+            <Icon name="copy" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">Raw formats</h3>
+            <p class="mt-2 text-meta">
+              SVG, PNG at any size up to 2048px, base64 data URIs and CSS
+              background rules - for templates, emails and everything that is
+              not a component.
+            </p>
+          </Card>
+        </div>
+      </div>
+    </section>
+
+    {/* 5 - Agents, the flagship */}
+    <section class="on-navy bg-ink py-20 text-on-dark">
+      <div class="page-container">
+        <p class="text-pill font-bold text-on-dark-muted uppercase">
+          For coding agents
+        </p>
+        <h2 class="mt-5 text-hero-dark font-bold">
+          Your agent picks from YOUR icons.
+        </h2>
+        <p class="mt-5 text-on-dark">
+          Curate collections here, on the web, where you can see the icons.
+          Your agent - Claude Code, Codex, Cursor - reaches them over MCP and
+          searches by intent rather than by filename, so it gets icons that are
+          already in your project's style and already in the format your code
+          wants. Whatever it picks can be written back into the collection, and
+          it can audit an entire repository against the system you curated.
+        </p>
+
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          <Card variant="inverted" class="bg-ink-deep">
+            <Icon name="search" size={24} class="text-primary" />
+            <h3 class="mt-4 text-h3 font-semibold">Search by intent</h3>
+            <p class="mt-2 text-meta text-on-dark">
+              Your agent asks for "a quiet empty state" and gets candidates that
+              read that way. It does not have to guess a filename, and neither
+              do you.
+            </p>
+          </Card>
+
+          <Card variant="inverted" class="bg-ink-deep">
+            <Icon name="grid" size={24} class="text-primary" />
+            <h3 class="mt-4 text-h3 font-semibold">
+              Your collections are the source of truth
+            </h3>
+            <p class="mt-2 text-meta text-on-dark">
+              You curate visually; the agent consumes what you curated and adds
+              its finds back. Two-way, so the library and the codebase never
+              drift apart.
+            </p>
+          </Card>
+
+          <Card variant="inverted" class="bg-ink-deep">
+            <Icon name="check" size={24} class="text-primary" />
+            <h3 class="mt-4 text-h3 font-semibold">Audit your repo</h3>
+            <p class="mt-2 text-meta text-on-dark">
+              Point it at your codebase and it reports icons from other sets,
+              orphan SVGs and off-system choices - with replacements taken from
+              your own collection.
+            </p>
+          </Card>
+        </div>
+
+        {/* Clearly labelled illustration - not a screenshot of one real
+            session, but the MCP server behind it is live. */}
+        <figure class="mt-12">
+          <div class="overflow-hidden rounded-card border-2 border-ink-shadow-soft bg-ink-deep">
+            <div
+              class="flex items-center gap-2 border-b-2 border-ink-shadow-soft px-5 py-3"
+            >
+              <span class="size-3 rounded-tag bg-on-dark-muted"></span>
+              <span class="size-3 rounded-tag bg-on-dark-muted"></span>
+              <span class="size-3 rounded-tag bg-on-dark-muted"></span>
+              <span class="ml-2 text-pill font-bold text-on-dark-muted uppercase">
+                Illustration
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-5 px-6 py-6 font-mono text-meta">
+              <p class="text-on-dark">
+                <span class="text-primary">you</span>
+                {" "}Add a settings screen to Fieldnote, use our icons.
+              </p>
+              <p class="text-on-dark">
+                <span class="text-teal">agent</span>
+                {" "}Pulled 4 icons from your "Fieldnote UI" collection, all Tabler,
+                all stroke 1.5:
+              </p>
+              <ul class="flex flex-col gap-1 pl-6 text-on-dark">
+                <li>settings &middot; bell &middot; user-circle &middot; logout</li>
+              </ul>
+              <p class="text-on-dark">
+                <span class="text-teal">agent</span>
+                {" "}Written as SwiftUI Shapes into
+                {" "}<span class="text-blue">Views/Settings/Icons.swift</span>.
+                {" "}One icon in that screen was from Feather and off-system - swapped
+                for the Tabler equivalent already in your collection.
+              </p>
+            </div>
+          </div>
+          <figcaption class="mt-3 text-meta text-on-dark-muted">
+            An illustration of the exchange - the MCP server behind it is live
+            now; connect yours from the dashboard.
+          </figcaption>
+        </figure>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4">
+          <Button href="/agents">
+            <Icon name="sparkle" slot="icon" />
+            See how it works
+          </Button>
+        </div>
+      </div>
+    </section>
+
+    {/* 6 - FAQ */}
+    <section class="py-20">
+      <div class="page-container">
+        <FaqAccordion faqs={faqs} />
+      </div>
+    </section>
+
+    {/* 7 - Launched on (marquee, homepage only, before the footer). Technique
+        adapted from the Nerve theme's hero logo marquee: an overflow-hidden
+        box with a horizontal mask-gradient for the edge fade, a max-content
+        flex track duplicated 4x and translated -25% for a seamless loop,
+        paused on hover and stopped under reduced motion. Plain text wordmarks -
+        self-hosted, no third-party badge CDNs (AGENTS.md). */}
+    <section class="border-t border-ink/10 py-14">
+      <p class="page-container text-center text-pill font-bold uppercase tracking-wide text-ink-muted">
+        Launched on
+      </p>
+      <div class="marquee mt-8" role="group" aria-label="Launched on these platforms">
+        <div class="marquee__track">
+          {
+            /* Two identical sets, each repeating the badge pair enough times to
+               exceed any viewport, animated -50% for a seamless, gapless loop. */
+            [0, 1].map((setIdx) => (
+              <div class="marquee__set" aria-hidden={setIdx === 1 ? "true" : undefined}>
+                {Array.from({ length: 6 }).flatMap(() => [
+                  <a
+                    href="https://easylaunch.dev/saas/motificons"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <img
+                      src="https://easylaunch.dev/badge/easylaunch-badge-light.svg"
+                      alt="Featured on EasyLaunch"
+                      width="188"
+                      height="56"
+                      loading="lazy"
+                    />
+                  </a>,
+                  <a
+                    href="https://nicklaunches.com/products/motificons/?utm_source=motificons.app&utm_medium=badge&utm_campaign=featured-premium"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <img
+                      src="https://nicklaunches.com/badges/featured-premium-dark.png"
+                      alt="Motificons on Nick Launches"
+                      width="244"
+                      height="56"
+                      loading="lazy"
+                    />
+                  </a>,
+                  <a
+                    href="https://startupfa.me/s/motificons.app-972?utm_source=motificons.app"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <img
+                      src="https://startupfa.me/badges/featured-badge-small.webp"
+                      alt="Motificons - Featured on Startup Fame"
+                      width="224"
+                      height="36"
+                      loading="lazy"
+                    />
+                  </a>,
+                ])}
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>

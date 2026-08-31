@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Motificons app icon</title>
+  <!-- Full-bleed artwork: macOS 26 (Tahoe) applies its own squircle mask and
+       liquid-glass treatment to app icons, so we no longer draw our own
+       rounded chip / border / shadow - the system does the masking.
+       Just a solid yellow field with the ink star, edge to edge. Hex only,
+       never OKLCH. -->
+  <rect x="0" y="0" width="1024" height="1024" fill="#FFD43B"/>
+  <!-- Star, same path/style as the web favicon, centered and scaled so it
+       spans ~60% of the canvas width. -->
+  <path d="M12 3.5 14.8 9.2 21 10.1l-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 10.1l6.2-.9z"
+        transform="translate(102.4 98.99) scale(34.1333)"
+        fill="#183153" stroke="#183153" stroke-width="2.2" stroke-linejoin="round"/>
+</svg>

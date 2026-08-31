@@ -1,0 +1,21 @@
+# Local-only secrets for `wrangler dev` and the Astro dev server.
+# Copy to .dev.vars (gitignored) and fill in your own values.
+# Production sets these with `wrangler secret put <NAME>`.
+
+# Session/token signing secret for Better Auth - generate one with:
+# openssl rand -base64 32
+BETTER_AUTH_SECRET=
+
+# Resend API key for magic-link sign-in emails. Without it, dev logs the
+# magic link to the console instead of sending an email.
+RESEND_API_KEY=
+
+# Cloudflare Turnstile - the human check in front of the magic-link send.
+# Leave both blank and the check is off (fail open, contributor-friendly).
+# For local work use Cloudflare's documented always-pass TEST pair:
+#   PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA
+#   TURNSTILE_SECRET=1x0000000000000000000000000000000AA
+# In production the site key belongs in wrangler.jsonc "vars" and the secret
+# is set with `wrangler secret put TURNSTILE_SECRET`.
+PUBLIC_TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET=

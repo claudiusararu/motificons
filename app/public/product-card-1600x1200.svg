@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" width="1600" height="1200">
+  <title>Motificons - LemonSqueezy product card</title>
+  <!-- LemonSqueezy store Media asset: solid brand canvas gray behind the chip mark
+       (same geometry as logo-1024.svg), chip ~640px tall, centered horizontally,
+       nudged ~40px above vertical center. Hex colors only, never OKLCH. No text. -->
+  <rect x="0" y="0" width="1600" height="1200" fill="#F0F1F3"/>
+  <g transform="translate(427.636 197.091) scale(0.727273)">
+    <rect x="72" y="85" width="880" height="880" rx="251" fill="#183153"/>
+    <rect x="72" y="59" width="880" height="880" rx="251" fill="#FFD43B" stroke="#183153" stroke-width="26"/>
+    <path d="M512.0,267.8 L587.3,421.0 L754.0,445.2 L633.0,563.5 L659.9,730.2 L512.0,652.3 L364.1,730.2 L391.0,563.5 L270.0,445.2 L436.7,421.0 Z"
+          fill="#183153" stroke="#183153" stroke-width="19.1" stroke-linejoin="round"/>
+  </g>
+</svg>

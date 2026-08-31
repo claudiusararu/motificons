@@ -1,0 +1,833 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Logo from "../components/Logo.astro";
+import Banner from "../components/Banner.astro";
+import Button from "../components/Button.astro";
+import Card from "../components/Card.astro";
+import CodePanel from "../components/CodePanel.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import Icon, { ICONS, type IconName } from "../components/Icon.astro";
+import IconTile from "../components/IconTile.astro";
+import Pill from "../components/Pill.astro";
+import SearchInput from "../components/SearchInput.astro";
+import Segmented from "../components/Segmented.astro";
+import SetCard from "../components/SetCard.astro";
+import StatCard from "../components/StatCard.astro";
+import Tabs from "../components/Tabs.astro";
+import Label from "../components/styleguide/Label.astro";
+import Section from "../components/styleguide/Section.astro";
+import { loadSetList } from "../lib/data";
+import { TINTS, tintIndexFor } from "../lib/set-card-tint";
+
+const CORE_COLORS = [
+  { token: "--ink", hex: "#183153", role: "Text, 2px borders, button shadows, dark sections" },
+  { token: "--ink-muted", hex: "#616D8A", role: "Secondary text, inactive nav" },
+  { token: "--canvas", hex: "#F0F1F3", role: "Page background" },
+  { token: "--surface", hex: "#FFFFFF", role: "Cards, inputs, content sections" },
+  { token: "--primary", hex: "#FFD43B", role: "Brand yellow: primary CTAs, featured" },
+  { token: "--card-shadow", hex: "#C3C6D1", role: "Hard shadow under white cards" },
+  { token: "--ink-shadow-soft", hex: "#515E7B", role: "Hard shadow under navy cards" },
+  { token: "--ink-deep", hex: "#10233F", role: "Code panel meta strip" },
+];
+
+const ACCENT_COLORS = [
+  { token: "--blue", hex: "#74C0FC", role: "Category pills, info cards", deep: "#146EBE" },
+  { token: "--teal", hex: "#63E6BE", role: "Alias pills, code strings", deep: "#099268" },
+  { token: "--grape", hex: "#E599F7", role: "Accent pills and cards", deep: "#9C36B5" },
+  { token: "--violet", hex: "#B197FC", role: "Accent cards", deep: "#6741D9" },
+  { token: "--red", hex: "#FF8787", role: "Accent cards only, never errors", deep: "#E03131" },
+  { token: "--banner", hex: "#D0EBFF", role: "Announcement bar background", deep: "#146EBE" },
+];
+
+const RADII = [
+  { name: "control", value: "8px", class: "rounded-control" },
+  { name: "btn / card", value: "12px", class: "rounded-btn" },
+  { name: "panel", value: "14px", class: "rounded-panel" },
+  { name: "pill", value: "32px", class: "rounded-pill" },
+  { name: "tag", value: "48px / full", class: "rounded-tag" },
+];
+
+const SHADOWS = [
+  { name: "shadow-hard", value: "0 6px 0 0 ink", surface: "bg-surface shadow-hard border-2 border-ink" },
+  { name: "shadow-hard-sm", value: "0 4px 0 0 ink", surface: "bg-surface shadow-hard-sm border-2 border-ink" },
+  { name: "shadow-card", value: "0 4px 0 0 #C3C6D1", surface: "bg-surface shadow-card" },
+  { name: "shadow-card-ink", value: "0 4px 0 0 #515E7B", surface: "bg-ink shadow-card-ink" },
+  { name: "shadow-card-blue", value: "0 4px 0 0 #146EBE", surface: "bg-blue shadow-card-blue" },
+  { name: "shadow-glow", value: "0 8px 24px rgba(255,212,59,.10)", surface: "bg-surface shadow-glow border-2 border-primary" },
+];
+
+const TILE_ICONS: IconName[] = Object.keys(ICONS) as IconName[];
+
+/** Placeholder glyph keys shown the way real Iconify names look. */
+const tileLabel = (name: string) =>
+  name.replace(/([A-Z])/g, "-$1").toLowerCase();
+
+const SVG_SAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <path fill="currentColor" d="M12 3.5 14.8 9.2 21 10.1l-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 10.1l6.2-.9z" />
+</svg>`;
+
+const JSX_SAMPLE = `export function Star(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" {...props}>
+      <path fill="currentColor" d="M12 3.5 14.8 9.2 21 10.1l-4.5 4.4z" />
+    </svg>
+  );
+}`;
+
+const SWIFTUI_SAMPLE = `struct Star: Shape {
+  func path(in rect: CGRect) -> Path {
+    var path = Path()
+    let scale = min(rect.width, rect.height) / 24
+    path.move(to: CGPoint(x: 12 * scale, y: 3.5 * scale))
+    path.addLine(to: CGPoint(x: 14.8 * scale, y: 9.2 * scale))
+    path.closeSubpath()
+    return path
+  }
+}`;
+
+/* Set card demo + palette histogram - real data, not fixtures, so a skewed
+   hash or a stale swatch shows up here before it ships. */
+const allSets = await loadSetList();
+
+/** One example per tint the first three sets happen to land on, so the demo
+    shows real variety rather than three cards that all hash the same. */
+const sampleSets = TINTS.map((_, index) =>
+  allSets.find((set) => tintIndexFor(set.prefix) === index),
+)
+  .filter((set) => set !== undefined)
+  .slice(0, 3);
+
+const tintCounts = TINTS.map((tint, index) => ({
+  tint,
+  count: allSets.filter((set) => tintIndexFor(set.prefix) === index).length,
+}));
+const maxTintCount = Math.max(...tintCounts.map((row) => row.count), 1);
+---
+
+<Layout
+  title="Styleguide - Motificons"
+  description="Every Motificons component and variant, built to the measured values of the design system."
+  noindex
+>
+  <Header active="icons" />
+
+  <Banner leadIn="Container rule.">
+    This strip is full-bleed, but its text starts on the same vertical line as
+    the logo above it and every heading below it.
+    <Button slot="cta" variant="primary" size="sm">Get Motificons</Button>
+  </Banner>
+
+  <main id="main" class="pt-10 pb-24">
+    <div class="page-container">
+      <p class="text-pill font-bold text-ink-muted uppercase">Reference</p>
+      <h1 class="mt-4 text-h2 font-bold sm:text-hero">Design system</h1>
+      <p class="mt-5 text-ink-muted">
+        Every component below is built to the measured values of the design
+        system. Flat color, hard offset shadows, 2px ink borders, warm rounded
+        type, light first. Nothing here is invented: where the system gave a
+        range, the choice is noted under the section title.
+      </p>
+
+      <nav aria-label="Styleguide sections" class="mt-8 flex flex-wrap gap-2">
+        <Pill href="#color" variant="gray">Color</Pill>
+        <Pill href="#type" variant="gray">Type</Pill>
+        <Pill href="#geometry" variant="gray">Radius + shadow</Pill>
+        <Pill href="#buttons" variant="gray">Buttons</Pill>
+        <Pill href="#pills" variant="gray">Pills</Pill>
+        <Pill href="#cards" variant="gray">Cards</Pill>
+        <Pill href="#set-card" variant="gray">Set card</Pill>
+        <Pill href="#stats" variant="gray">Stats</Pill>
+        <Pill href="#search" variant="gray">Search</Pill>
+        <Pill href="#segmented" variant="gray">Segmented</Pill>
+        <Pill href="#tabs" variant="gray">Tabs</Pill>
+        <Pill href="#code" variant="gray">Code panel</Pill>
+        <Pill href="#banner" variant="gray">Banner</Pill>
+        <Pill href="#tiles" variant="gray">Icon tiles</Pill>
+        <Pill href="#states" variant="gray">States + a11y</Pill>
+        <Pill href="#logo" variant="gray">Logo</Pill>
+      </nav>
+    </div>
+
+    <div class="mt-16 flex flex-col gap-16">
+      <!-- ------------------------------------------------------ Color -->
+      <Section
+        id="color"
+        title="Color tokens"
+        spec="Color. Text on any accent is always ink, never white. Colored surfaces take their own hue at Open Color level 8 as the hard shadow."
+      >
+        <Label text="Core" />
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {
+            CORE_COLORS.map((color) => (
+              <div class="rounded-card bg-surface p-4 shadow-card">
+                <div
+                  class="h-16 rounded-control border-2 border-ink/10"
+                  style={{ backgroundColor: color.hex }}
+                />
+                <p class="mt-3 font-mono text-meta font-semibold">
+                  {color.token}
+                </p>
+                <p class="text-meta text-ink-muted">{color.hex}</p>
+                <p class="mt-2 text-meta text-ink-muted">{color.role}</p>
+              </div>
+            ))
+          }
+        </div>
+
+        <Label text="Accents and their level-8 shadow pair" class="mt-10" />
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {
+            ACCENT_COLORS.map((color) => (
+              <div class="rounded-card bg-surface p-4 shadow-card">
+                <div class="flex h-16 gap-1">
+                  <div
+                    class="h-full flex-[3] rounded-l-control"
+                    style={{ backgroundColor: color.hex }}
+                  />
+                  <div
+                    class="h-full flex-1 rounded-r-control"
+                    style={{ backgroundColor: color.deep }}
+                  />
+                </div>
+                <p class="mt-3 font-mono text-meta font-semibold">
+                  {color.token}
+                </p>
+                <p class="text-meta text-ink-muted">
+                  {color.hex} / {color.deep}
+                </p>
+                <p class="mt-2 text-meta text-ink-muted">{color.role}</p>
+              </div>
+            ))
+          }
+        </div>
+      </Section>
+
+      <!-- ------------------------------------------------------- Type -->
+      <Section
+        id="type"
+        title="Typography"
+        spec="Type. Nunito Variable, self-hosted woff2, no CDN. Fallback: Helvetica Neue, Helvetica, Arial."
+      >
+        <div class="rounded-card bg-surface px-8 py-7 shadow-card">
+          <div class="flex flex-col gap-6">
+            <div>
+              <Label text="text-hero - 48 / 700 / 54" />
+              <p class="text-hero font-bold">Icons for humans and agents</p>
+            </div>
+            <div>
+              <Label text="text-h1 - 40 / 700" />
+              <p class="text-h1 font-bold">Tabler star icon</p>
+            </div>
+            <div>
+              <Label text="text-h2 - 32 / 600" />
+              <p class="text-h2 font-semibold">Browse every set</p>
+            </div>
+            <div>
+              <Label text="text-h3 - 24 / 600" />
+              <p class="text-h3 font-semibold">Related icons</p>
+            </div>
+            <div>
+              <Label text="text-body - 16 / 400" />
+              <p>
+                Body copy sits on the canvas in ink. Prose links look like
+                <a href="#type" class="prose-link">this underlined link</a>
+                and turn blue-deep on hover.
+              </p>
+            </div>
+            <div>
+              <Label text="text-meta - 14 / 400 / ink-muted" />
+              <p class="text-meta text-ink-muted">
+                MIT license. No attribution required.
+              </p>
+            </div>
+            <div>
+              <Label text="text-pill - 12 / 700 / uppercase" />
+              <p class="text-pill font-bold uppercase">Outline style</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-card bg-ink px-8 py-7 text-on-dark shadow-card-ink">
+          <Label text="On dark - hero 40 / 700 and mono 16" class="text-on-dark-muted" />
+          <p class="text-hero-dark font-bold">Free. Everything, forever.</p>
+          <p class="mt-4 font-mono text-code">
+            npx motificons add <span class="text-teal">"tabler:star"</span>
+          </p>
+        </div>
+      </Section>
+
+      <!-- --------------------------------------------------- Geometry -->
+      <Section
+        id="geometry"
+        title="Radius and hard shadows"
+        spec="Shadows. Solid color, zero blur. The accent glow is the only soft shadow in the system."
+      >
+        <Label text="Radius" />
+        <div class="flex flex-wrap gap-4">
+          {
+            RADII.map((radius) => (
+              <div class="w-[168px]">
+                <div
+                  class:list={[
+                    "flex h-20 items-center justify-center border-2 border-ink bg-surface",
+                    radius.class,
+                  ]}
+                >
+                  <span class="text-meta font-semibold">{radius.value}</span>
+                </div>
+                <p class="mt-2 font-mono text-meta text-ink-muted">
+                  {radius.name}
+                </p>
+              </div>
+            ))
+          }
+        </div>
+
+        <Label text="Shadows" class="mt-10" />
+        <div class="flex flex-wrap gap-6">
+          {
+            SHADOWS.map((shadow) => (
+              <div class="w-[220px]">
+                <div
+                  class:list={[
+                    "flex h-20 items-center justify-center rounded-card",
+                    shadow.surface,
+                  ]}
+                />
+                <p class="mt-3 font-mono text-meta font-semibold">
+                  {shadow.name}
+                </p>
+                <p class="font-mono text-meta text-ink-muted">{shadow.value}</p>
+              </div>
+            ))
+          }
+        </div>
+      </Section>
+
+      <!-- ---------------------------------------------------- Buttons -->
+      <Section
+        id="buttons"
+        title="Buttons"
+        spec="Press physics: hover drops 2px onto a 4px shadow, active drops 6px onto no shadow, 120ms ease-in. The shadow's bottom edge never moves. Small buttons rest at 4px so their travel scales to 2px and 4px."
+      >
+        <Label text="Default - pad 15px 24px, radius 12px, shadow 0 6px" />
+        <div class="flex flex-wrap items-center gap-4">
+          <Button variant="primary">Get Motificons</Button>
+          <Button variant="secondary">Browse sets</Button>
+          <Button variant="blue">Get Starter</Button>
+          <Button variant="teal">Get Team</Button>
+          <Button variant="ghost">Sign in</Button>
+        </div>
+
+        <Label text="Small - pad 10px 16px, radius 8px, shadow 0 4px" class="mt-10" />
+        <div class="flex flex-wrap items-center gap-4">
+          <Button variant="primary" size="sm">Copy SVG</Button>
+          <Button variant="secondary" size="sm">Copy PNG</Button>
+          <Button variant="blue" size="sm">JSX</Button>
+          <Button variant="teal" size="sm">SwiftUI</Button>
+          <Button variant="ghost" size="sm">Cancel</Button>
+        </div>
+
+        <Label text="Leading icon" class="mt-10" />
+        <div class="flex flex-wrap items-center gap-4">
+          <Button variant="primary">
+            <Icon name="download" slot="icon" />
+            Download SVG
+          </Button>
+          <Button variant="secondary">
+            <Icon name="copy" slot="icon" />
+            Copy to clipboard
+          </Button>
+          <Button variant="blue" size="sm">
+            <Icon name="sparkle" size={16} slot="icon" />
+            Open in your agent
+          </Button>
+        </div>
+
+        <Label text="States - link, ghost active, disabled, full width" class="mt-10" />
+        <div class="flex flex-wrap items-center gap-4">
+          <Button href="#buttons" variant="secondary">Anchor link</Button>
+          <Button
+            href="https://iconify.design"
+            external
+            variant="secondary"
+            size="sm"
+          >
+            <Icon name="arrowRight" size={16} slot="icon" />
+            External link
+          </Button>
+          <Button variant="ghost" active>Active nav item</Button>
+          <Button variant="primary" disabled>Disabled</Button>
+        </div>
+        <div class="mt-4 max-w-[320px]">
+          <Button variant="primary" fullWidth>Full width CTA</Button>
+        </div>
+      </Section>
+
+      <!-- ------------------------------------------------------ Pills -->
+      <Section
+        id="pills"
+        title="Pills and tags"
+        spec="Radius 48px, pad 6px 12px, 12/700 uppercase. Yellow = style or set family, blue = category, teal = alias or related, gray = version. Text is ink on every light fill, which is what the ink-on-accents rule covers; blueDeep is a dark fill and takes white, since ink on it would be 1.8:1 against white's 5.2:1. Linked pills lift 2px onto their own hue."
+      >
+        <div class="flex flex-wrap items-center gap-3">
+          <Pill variant="yellow">Outline</Pill>
+          <Pill variant="yellow">Solid</Pill>
+          <Pill variant="blue">Arrows</Pill>
+          <Pill variant="blue">Weather</Pill>
+          <Pill variant="teal">Alias: bookmark</Pill>
+          <Pill variant="gray">v3.34.1</Pill>
+          <Pill variant="blueDeep">337,122+ open-source icons</Pill>
+        </div>
+
+        <Label text="Linked - the whole set links to a category page" class="mt-10" />
+        <div class="flex flex-wrap items-center gap-3">
+          <Pill href="#pills" variant="yellow">Style: duotone</Pill>
+          <Pill href="#pills" variant="blue">Category: media</Pill>
+          <Pill href="#pills" variant="teal">Related</Pill>
+        </div>
+
+        <Label text="With a leading glyph" class="mt-10" />
+        <div class="flex flex-wrap items-center gap-3">
+          <Pill variant="teal">
+            <Icon name="check" size={12} strokeWidth={3} />
+            MIT
+          </Pill>
+          <Pill variant="yellow">
+            <Icon name="sparkle" size={12} />
+            New
+          </Pill>
+        </div>
+      </Section>
+
+      <!-- ------------------------------------------------------ Cards -->
+      <Section
+        id="cards"
+        title="Cards"
+        spec="Radius 12px, pad 28px 32px, no border, 4px hard shadow. Clickable cards translate down 2px on hover, so their shadow drops to 2px and the bottom edge stays put."
+      >
+        <div class="grid gap-6 md:grid-cols-3">
+          <Card variant="standard">
+            <h3 class="text-h3 font-semibold">Standard</h3>
+            <p class="mt-2 text-meta text-ink-muted">
+              White surface, shadow 0 4px 0 card-shadow, no border.
+            </p>
+          </Card>
+
+          <Card variant="inverted">
+            <h3 class="text-h3 font-semibold">Inverted</h3>
+            <p class="mt-2 text-meta text-on-dark-muted">
+              Navy surface, light text, shadow 0 4px 0 ink-shadow-soft.
+            </p>
+          </Card>
+
+          <Card variant="standard" href="#cards">
+            <h3 class="text-h3 font-semibold">Clickable</h3>
+            <p class="mt-2 text-meta text-ink-muted">
+              Hover me: the card presses down 2px into its own shadow.
+            </p>
+          </Card>
+        </div>
+
+        <Label text="Colored - shadow is the same hue at Open Color level 8" class="mt-10" />
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+          <Card variant="blue">
+            <h3 class="text-h3 font-semibold">Blue</h3>
+            <p class="mt-2 text-meta">Info and category surfaces.</p>
+          </Card>
+          <Card variant="teal">
+            <h3 class="text-h3 font-semibold">Teal</h3>
+            <p class="mt-2 text-meta">Success and license surfaces.</p>
+          </Card>
+          <Card variant="grape">
+            <h3 class="text-h3 font-semibold">Grape</h3>
+            <p class="mt-2 text-meta">Accent surfaces.</p>
+          </Card>
+          <Card variant="violet">
+            <h3 class="text-h3 font-semibold">Violet</h3>
+            <p class="mt-2 text-meta">Accent surfaces.</p>
+          </Card>
+          <Card variant="red">
+            <h3 class="text-h3 font-semibold">Red</h3>
+            <p class="mt-2 text-meta">Accent only, never errors.</p>
+          </Card>
+        </div>
+
+        <Label text="Corner badge - pill overlapping the top edge" class="mt-10" />
+        <div class="grid gap-6 md:grid-cols-3">
+          <Card variant="standard">
+            <Pill slot="badge" variant="yellow">New</Pill>
+            <h3 class="text-h3 font-semibold">SwiftUI export</h3>
+            <p class="mt-2 text-meta text-ink-muted">
+              Shape codegen with an asset-catalog fallback.
+            </p>
+          </Card>
+          <Card variant="standard">
+            <Pill slot="badge" variant="blue">Beta</Pill>
+            <h3 class="text-h3 font-semibold">Style engine</h3>
+            <p class="mt-2 text-meta text-ink-muted">
+              Retarget stroke width across a whole collection.
+            </p>
+          </Card>
+          <Card variant="inverted">
+            <Pill slot="badge" variant="teal">New</Pill>
+            <h3 class="text-h3 font-semibold">MCP server</h3>
+            <p class="mt-2 text-meta text-on-dark-muted">
+              Your agent picks icons from your curated collection.
+            </p>
+          </Card>
+        </div>
+      </Section>
+
+      <!-- --------------------------------------------------- Set card -->
+      <Section
+        id="set-card"
+        title="Set card"
+        spec={`Open Color level-3 background paired with its level-8 sibling as the hard shadow - the same relationship the colored-card rule above uses, just spread across twelve hues instead of five. The tint is a hash of the set prefix, never render order, so a set keeps its colour across pages, re-sorts and pipeline runs.`}
+      >
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {sampleSets.map((set) => <SetCard set={set} />)}
+        </div>
+
+        <Label text="The twelve tints" class="mt-10" />
+        <div class="grid grid-cols-4 gap-3 sm:grid-cols-6">
+          {
+            TINTS.map((tint) => (
+              <div
+                class="rounded-control px-3 py-3 text-center"
+                style={`background-color:${tint.background};box-shadow:0 4px 0 0 ${tint.shadow}`}
+              >
+                <p class="text-meta font-semibold text-ink capitalize">
+                  {tint.name}
+                </p>
+              </div>
+            ))
+          }
+        </div>
+
+        <Label
+          text={`Distribution across all ${allSets.length} real sets - a histogram, not a mockup, so a skewed hash shows up here first`}
+          class="mt-10"
+        />
+        <div class="flex flex-col gap-2">
+          {
+            tintCounts.map(({ tint, count }) => (
+              <div class="flex items-center gap-3">
+                <span class="w-16 shrink-0 text-meta text-ink-muted capitalize">
+                  {tint.name}
+                </span>
+                <span class="h-5 min-w-1 rounded-control" style={`background-color:${tint.background};box-shadow:0 2px 0 0 ${tint.shadow};width:${(count / maxTintCount) * 100}%`} />
+                <span class="text-meta text-ink-muted">{count}</span>
+              </div>
+            ))
+          }
+        </div>
+      </Section>
+
+      <!-- ------------------------------------------------------ Stats -->
+      <Section
+        id="stats"
+        title="Stat cards"
+        spec="Big 700 number with an accent-colored tail, 14px muted label, featured stat on the yellow card. Numbers shown here are placeholders: real totals come from the pipeline."
+      >
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard value="300k" label="Open-source icons" accent="blue" />
+          <StatCard value="200" label="Icon sets" accent="teal" />
+          <StatCard value="7" label="Export formats" accent="grape" />
+          <StatCard value="Free" suffix="" label="No account needed to browse" featured />
+        </div>
+      </Section>
+
+      <!-- ----------------------------------------------------- Search -->
+      <Section
+        id="search"
+        title="Search input"
+        spec="Radius 32px, 2px ink border, pad 18px 24px, icon inset to 55px. Focus keeps the ink border and adds a 4px hard shadow."
+      >
+        <div class="max-w-[640px]">
+          <SearchInput id="sg-search" placeholder="Search icons" />
+        </div>
+
+        <Label text="With a query" class="mt-8" />
+        <div class="max-w-[640px]">
+          <SearchInput id="sg-search-filled" value="arrow right" />
+        </div>
+      </Section>
+
+      <!-- -------------------------------------------------- Segmented -->
+      <Section
+        id="segmented"
+        title="Segmented control"
+        spec="2px ink container, segments split by the same rule, active segment #E1E4E8. Icon-only segments invert to an ink fill instead. Radius resolved to 12px, the default control radius."
+      >
+        <div class="flex flex-wrap items-start gap-6">
+          <Segmented
+            label="Export size"
+            items={[
+              { label: "24", value: "24" },
+              { label: "48", value: "48" },
+              { label: "128", value: "128" },
+              { label: "512", value: "512" },
+            ]}
+            value="48"
+          />
+          <Segmented
+            label="Export format"
+            size="sm"
+            items={[
+              { label: "SVG", value: "svg" },
+              { label: "PNG", value: "png" },
+              { label: "JSX", value: "jsx" },
+            ]}
+          />
+          <Segmented
+            label="Layout"
+            iconOnly
+            items={[
+              { label: "Grid", value: "grid", icon: "grid" },
+              { label: "List", value: "list", icon: "list" },
+            ]}
+          />
+        </div>
+      </Section>
+
+      <!-- ------------------------------------------------------- Tabs -->
+      <Section
+        id="tabs"
+        title="Tab nav"
+        spec="14px, inactive ink-muted, active blue-deep with a 3px blue-deep underline, ~21px padding. Tabs with an href render as real links for browse pages."
+      >
+        <Tabs
+          label="Browse"
+          items={[
+            { label: "Icons", value: "icons" },
+            { label: "Sets", value: "sets" },
+            { label: "Categories", value: "categories" },
+          ]}
+        />
+      </Section>
+
+      <!-- ------------------------------------------------- Code panel -->
+      <Section
+        id="code"
+        title="Code panel"
+        spec="Navy body, uppercase tab row with a 3px yellow underline on the active tab, mono 16px, one-click copy, darker meta strip at the foot. Highlighting is Shiki with the motificons-dark theme, rendered at build time with zero client JS; the theme background is transparent so the panel's navy shows through. Overflow uses the .scroll-dark utility (8px thin, full-radius #515E7B thumb, transparent track, hover #8E9CB8) with bottom padding so the thumb never sits on the code. Light surfaces use .scroll-light, as the header nav does when it overflows."
+      >
+        <CodePanel
+          tabs={[
+            { label: "SVG", code: SVG_SAMPLE, lang: "xml" },
+            { label: "JSX", code: JSX_SAMPLE, lang: "tsx" },
+            { label: "SwiftUI", code: SWIFTUI_SAMPLE, lang: "swift" },
+          ]}
+          footerLinks={[
+            { label: "MIT license", href: "https://opensource.org/license/mit", external: true },
+            { label: "Attribution", href: "#code" },
+          ]}
+        />
+      </Section>
+
+      <!-- ----------------------------------------------------- Banner -->
+      <Section
+        id="banner"
+        title="Announcement banner"
+        spec="Light blue, ink text, bold lead-in, pill CTA right, dismiss x. The dismiss button really removes it: reload to bring it back. The background is full-bleed and the content rides the shared container, so the real placement is at page level - see the live one under the header. The two below sit inside this section, so they pick up its container as well and read as inset strips."
+      >
+        <Banner leadIn="Free forever.">
+          Every icon, every export format, no account needed.
+          <Button slot="cta" variant="primary" size="sm">Start browsing</Button>
+        </Banner>
+
+        <Label text="Without a dismiss control" class="mt-8" />
+        <Banner leadIn="Heads up." dismissible={false}>
+          Brand icon sets carry their owners' trademark terms.
+          <Button slot="cta" variant="secondary" size="sm" href="#banner">
+            Read the licenses
+          </Button>
+        </Banner>
+      </Section>
+
+      <!-- -------------------------------------------------- Icon tiles -->
+      <Section
+        id="tiles"
+        title="Icon grid tile"
+        spec="White tile, ~30px glyph centered, name always visible in muted 14px (better UX and better SEO than hover-only names). Hover lifts 2px onto a 4px hard shadow. Glyphs here come from the placeholder Icon.astro set, not the icon pipeline."
+      >
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-3">
+          {
+            TILE_ICONS.map((name) => (
+              <IconTile name={tileLabel(name)} href="#tiles">
+                <Icon name={name} size={30} />
+              </IconTile>
+            ))
+          }
+        </div>
+
+        <Label text="With a corner badge" class="mt-10" />
+        <div class="flex flex-wrap gap-3">
+          <IconTile name="star" href="#tiles" class="w-[150px]">
+            <Pill slot="badge" variant="yellow">New</Pill>
+            <Icon name="star" size={30} />
+          </IconTile>
+          <IconTile name="sparkle" href="#tiles" class="w-[150px]">
+            <Pill slot="badge" variant="blue">Beta</Pill>
+            <Icon name="sparkle" size={30} />
+          </IconTile>
+          <IconTile name="bolt" href="#tiles" class="w-[150px]">
+            <Pill slot="badge" variant="teal">New</Pill>
+            <Icon name="bolt" size={30} />
+          </IconTile>
+        </div>
+      </Section>
+
+      <!-- ------------------------------------------------------ States -->
+      <Section
+        id="states"
+        title="States and accessibility"
+        spec="Accessibility is required, not optional. Every interactive component carries default, hover, focus-visible, active, disabled, loading, error and success. Tab through this page to see the focus ring: 3px blue-deep with a 2px offset, yellow on navy surfaces."
+      >
+        <Label text="Focus ring - press Tab, or Shift+Tab from the address bar" />
+        <div class="flex flex-wrap items-center gap-4">
+          <Button variant="secondary">Focus me</Button>
+          <Pill href="#states" variant="blue">Focusable pill</Pill>
+          <Segmented
+            label="Focus demo"
+            size="sm"
+            items={[
+              { label: "One", value: "one" },
+              { label: "Two", value: "two" },
+            ]}
+          />
+        </div>
+        <div class="mt-4 max-w-[420px]">
+          <Card variant="inverted">
+            <p class="text-meta text-on-dark-muted">
+              Navy surfaces flip the ring to yellow.
+            </p>
+            <a
+              href="#states"
+              class="mt-2 inline-block text-on-dark underline underline-offset-2"
+            >
+              Focusable link on navy
+            </a>
+          </Card>
+        </div>
+
+        <Label text="Disabled - 55% opacity, shadow kept, press physics off, not-allowed cursor" class="mt-10" />
+        <div class="flex flex-wrap items-center gap-4">
+          <Button variant="primary" disabled>Primary</Button>
+          <Button variant="secondary" disabled>Secondary</Button>
+          <Button variant="blue" size="sm" disabled>Small blue</Button>
+          <Button href="#states" variant="secondary" disabled>Disabled link</Button>
+        </div>
+
+        <Label text="Loading - inline spinner, label kept, width does not move, aria-busy" class="mt-10" />
+        <div class="flex flex-wrap items-center gap-4">
+          <Button variant="primary" loading>Exporting SwiftUI</Button>
+          <Button variant="secondary" loading={false}>
+            <Icon name="download" slot="icon" />
+            Not loading (same width)
+          </Button>
+          <Button variant="teal" size="sm" loading>Rendering PNG</Button>
+        </div>
+
+        <Label text="Input error - --danger border, 14px message with an icon, aria-invalid" class="mt-10" />
+        <div class="max-w-[640px]">
+          <SearchInput
+            id="sg-search-error"
+            value="?????"
+            error="Search needs at least two characters."
+          />
+        </div>
+
+        <Label text="Input success - teal border and check, ink message" class="mt-8" />
+        <div class="max-w-[640px]">
+          <SearchInput
+            id="sg-search-success"
+            value="arrow"
+            success="1,284 icons matched across 96 sets."
+          />
+        </div>
+
+        <Label text="Keyboard patterns implemented" class="mt-10" />
+        <Card variant="standard">
+          <ul class="flex flex-col gap-3 text-meta">
+            <li>
+              <strong class="font-bold">Skip to content</strong> - first
+              focusable element on every page, lands on the main landmark. Click
+              the page background at the very top and press Tab to see it: it is
+              clipped to nothing until focused, then appears at the top left
+              above the sticky header.
+            </li>
+            <li>
+              <strong class="font-bold">Segmented control</strong> - radiogroup
+              semantics with a roving tabindex. Left/Up and Right/Down cycle and
+              wrap, Home and End jump to the ends.
+            </li>
+            <li>
+              <strong class="font-bold">Tabs</strong> - WAI-ARIA tabs pattern:
+              arrows move and select, Home and End jump. Tabs that carry an href
+              are navigation instead, so they stay in the normal tab order as
+              plain links with aria-current.
+            </li>
+            <li>
+              <strong class="font-bold">Code panel</strong> - the same tabs
+              pattern wired to real tabpanels; the code region itself is
+              focusable so long lines can be scrolled by keyboard. Copy
+              announces through a polite live region.
+            </li>
+            <li>
+              <strong class="font-bold">Banner dismiss</strong> - a real button,
+              reachable and operable by keyboard.
+            </li>
+            <li>
+              <strong class="font-bold">Touch targets</strong> - icon-only
+              controls grow to 44x44 under a coarse pointer. Dense tag pills keep
+              their size and grow only the hit area.
+            </li>
+            <li>
+              <strong class="font-bold">Reduced motion</strong> - every
+              transition and animation collapses to an instant state change,
+              press physics included. The button spinner resolves to a static
+              ring.
+            </li>
+          </ul>
+        </Card>
+      </Section>
+
+      <!-- -------------------------------------------------------- Logo -->
+      <Section
+        id="logo"
+        title="Logo mark"
+        spec="A 28x28 chip that is a mini-instance of the system: yellow fill, 2px ink border, 8px radius, 0 2px 0 hard shadow, 16px ink glyph inside. The glyph crossfades through star, heart, bolt and camera, holding each for 2.8s with a 300ms opacity plus scale 0.92 to 1 handover - opacity and transform only. Under prefers-reduced-motion it is a static star, no cycle. The glyph layers are aria-hidden; the accessible name is the wordmark. The favicon is the same chip with the star."
+      >
+        <div class="flex flex-wrap items-center gap-10">
+          <div>
+            <Label text="On light (header)" />
+            <Logo />
+          </div>
+          <div class="rounded-card bg-ink px-8 py-7 shadow-card-ink">
+            <Label text="On navy (footer)" class="text-on-dark-muted" />
+            <Logo onDark />
+          </div>
+        </div>
+      </Section>
+
+      <!-- ------------------------------------------------------ Chrome -->
+      <Section
+        id="chrome"
+        title="Header and footer"
+        spec="The header is live and sticky at the top of this page: wordmark left, nav centre, search and sign-in right. The navy footer with its link columns closes the page below. External footer links open in a new tab."
+      >
+        <Card variant="standard">
+          <p class="text-meta text-ink-muted">
+            Nav links point at their real routes (/search, /categories, /tools,
+            /app, /agents).
+          </p>
+        </Card>
+      </Section>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>

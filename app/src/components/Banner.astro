@@ -1,0 +1,86 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  /** Bold lead-in that opens the sentence. */
+  leadIn?: string;
+  dismissible?: boolean;
+  /** When set, dismissal is remembered in localStorage under this key, so
+      the banner stays closed on return visits instead of just this page
+      load. Omit for the original session-only dismiss (styleguide's demo
+      and any future one-off announcement keep working unchanged). One flag
+      per key - callers needing several independent banners use different
+      keys; there is no per-visitor sync beyond localStorage. */
+  storageKey?: string;
+  class?: string;
+}
+
+const { leadIn, dismissible = true, storageKey, class: className } = Astro.props;
+---
+
+{/* Announcement banner: light blue, ink text, bold lead-in,
+    pill CTA right, dismiss x, radius 12px. The page owns the inset. */}
+<div
+  data-banner
+  data-dismiss-key={storageKey}
+  role="region"
+  aria-label="Announcement"
+  class:list={["w-full bg-banner text-ink", className]}
+>
+  {/* Full-bleed background, content on the shared container (AGENTS.md). */}
+  <div class="page-container flex flex-wrap items-center gap-x-5 gap-y-3 py-4">
+    <p class="min-w-[220px] flex-1 text-body">
+      {leadIn && <strong class="font-bold">{leadIn}</strong>}{leadIn && " "}<slot
+      />
+    </p>
+
+    <slot name="cta" />
+
+    {
+      dismissible && (
+        <button
+          type="button"
+          data-banner-dismiss
+          aria-label="Dismiss"
+          class="touch-target-inset flex h-11 w-11 shrink-0 items-center justify-center rounded-tag text-ink transition-colors duration-[120ms] ease-in hover:bg-ink/10"
+        >
+          <Icon name="close" size={18} />
+        </button>
+      )
+    }
+  </div>
+</div>
+
+<script>
+  /* Synchronous, runs as soon as this tag is parsed (right after the banner
+     markup above) - hides an already-dismissed banner before the browser
+     gets a chance to paint it, same "no flash" reasoning as any other
+     localStorage-driven visibility check in a server-rendered page. */
+  document.querySelectorAll<HTMLElement>("[data-banner]").forEach((banner) => {
+    const key = banner.dataset["dismissKey"];
+    if (key) {
+      try {
+        if (localStorage.getItem(key)) {
+          banner.remove();
+          return;
+        }
+      } catch {
+        /* Storage disabled/unavailable - fall back to showing the banner
+           every time rather than hiding it forever. */
+      }
+    }
+
+    banner
+      .querySelector<HTMLButtonElement>("[data-banner-dismiss]")
+      ?.addEventListener("click", () => {
+        if (key) {
+          try {
+            localStorage.setItem(key, "1");
+          } catch {
+            /* best-effort - see above */
+          }
+        }
+        banner.remove();
+      });
+  });
+</script>
