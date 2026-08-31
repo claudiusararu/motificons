@@ -20,6 +20,7 @@ import { buildInlineSvg } from "../lib/transforms/svg-doc";
 import { EXPORT_FORMATS } from "../lib/transforms";
 import { siteStats, type Faq as FaqItem } from "../lib/site";
 import { ANON_DAILY_LIMIT } from "../lib/search/meter-kv";
+import { WEBMCP_TOOL_COUNT } from "../lib/webmcp/catalog";
 
 /*
  * Homepage. The page's job is to explain what the product does and let a
@@ -106,6 +107,10 @@ const faqs: FaqItem[] = [
   {
     q: "How do coding agents connect to it?",
     a: "Over MCP. You point Claude Code, Codex or Cursor at the Motificons server, and your agent can search the library by intent, pull from the collections you curated, and get code in that collection's format. It can also write what it picked back into a collection, so the library and the codebase stay in step.",
+  },
+  {
+    q: "What is WebMCP, and can my browser's AI use this site?",
+    a: `Yes, if your browser's AI agent supports WebMCP. WebMCP is a new browser standard: instead of leaving an AI to guess at the buttons on a page, the page tells it what it can do. Motificons offers ${WEBMCP_TOOL_COUNT} things - search the library and filter it, open an icon, restyle it, read its code, download it, and create collections and fill them. All of it happens on the page you are looking at, so you see every step and can take the mouse back whenever you want. Today it works in Chrome with an experimental flag switched on, and in the ChatGPT desktop app's browser; the /agents page has the exact steps. In any other browser nothing changes and the site works as it always has.`,
   },
   {
     q: "What formats can I export to?",
@@ -320,105 +325,156 @@ const faqs: FaqItem[] = [
       </div>
     </section>
 
-    {/* 5 - Agents, the flagship */}
+    {/* 5 - Agents, the flagship. Two rails told as one story: the MCP server
+        a coding agent connects to from the editor, and WebMCP, where the
+        agent driving the browser works this site next to the person. Same
+        idiom as before - ink surface, inverted cards, labelled illustration
+        chrome - only the content is two-sided now. */}
     <section class="on-navy bg-ink py-20 text-on-dark">
       <div class="page-container">
         <p class="text-pill font-bold text-on-dark-muted uppercase">
-          For coding agents
+          For AI agents
         </p>
         <h2 class="mt-5 text-hero-dark font-bold">
-          Your agent picks from YOUR icons.
+          Your agent can use Motificons two ways.
         </h2>
         <p class="mt-5 text-on-dark">
-          Curate collections here, on the web, where you can see the icons.
-          Your agent - Claude Code, Codex, Cursor - reaches them over MCP and
-          searches by intent rather than by filename, so it gets icons that are
-          already in your project's style and already in the format your code
-          wants. Whatever it picks can be written back into the collection, and
-          it can audit an entire repository against the system you curated.
+          Both end in the same place: the icons your agent uses are the ones
+          you curated, in your project's style, in the format your code wants.
+          It reaches them from your editor, or from your browser, working this
+          site alongside you.
         </p>
 
-        <div class="mt-12 grid gap-6 md:grid-cols-3">
+        <div class="mt-12 grid gap-6 md:grid-cols-2">
           <Card variant="inverted" class="bg-ink-deep">
-            <Icon name="search" size={24} class="text-primary" />
-            <h3 class="mt-4 text-h3 font-semibold">Search by intent</h3>
+            <Icon name="bolt" size={24} class="text-primary" />
+            <h3 class="mt-4 text-h3 font-semibold">In your editor, over MCP</h3>
             <p class="mt-2 text-meta text-on-dark">
-              Your agent asks for "a quiet empty state" and gets candidates that
-              read that way. It does not have to guess a filename, and neither
-              do you.
+              Claude Code, Codex and Cursor connect to the Motificons server and
+              search by intent instead of guessing at filenames. Your agent
+              pulls from the collections you curated, writes back whatever it
+              picks, and can check a whole repository against the system you
+              built - swapping off-system icons for the ones you already chose.
             </p>
           </Card>
 
           <Card variant="inverted" class="bg-ink-deep">
-            <Icon name="grid" size={24} class="text-primary" />
+            <Icon name="sparkle" size={24} class="text-primary" />
             <h3 class="mt-4 text-h3 font-semibold">
-              Your collections are the source of truth
+              In your browser, over WebMCP
             </h3>
             <p class="mt-2 text-meta text-on-dark">
-              You curate visually; the agent consumes what you curated and adds
-              its finds back. Two-way, so the library and the codebase never
-              drift apart.
-            </p>
-          </Card>
-
-          <Card variant="inverted" class="bg-ink-deep">
-            <Icon name="check" size={24} class="text-primary" />
-            <h3 class="mt-4 text-h3 font-semibold">Audit your repo</h3>
-            <p class="mt-2 text-meta text-on-dark">
-              Point it at your codebase and it reports icons from other sets,
-              orphan SVGs and off-system choices - with replacements taken from
-              your own collection.
+              Open the site in a browser whose AI agent supports WebMCP and the
+              agent can search, restyle and fill collections on the page - with
+              you watching and able to step in. It types in the search box you
+              are looking at, moves the controls on the preview, and drops icons
+              into your collection while the grid updates in front of you.
+              Nothing happens off-screen, and you can take over at any point.
             </p>
           </Card>
         </div>
 
-        {/* Clearly labelled illustration - not a screenshot of one real
-            session, but the MCP server behind it is live. */}
-        <figure class="mt-12">
-          <div class="overflow-hidden rounded-card border-2 border-ink-shadow-soft bg-ink-deep">
-            <div
-              class="flex items-center gap-2 border-b-2 border-ink-shadow-soft px-5 py-3"
-            >
-              <span class="size-3 rounded-tag bg-on-dark-muted"></span>
-              <span class="size-3 rounded-tag bg-on-dark-muted"></span>
-              <span class="size-3 rounded-tag bg-on-dark-muted"></span>
-              <span class="ml-2 text-pill font-bold text-on-dark-muted uppercase">
-                Illustration
-              </span>
-            </div>
+        {/* One honest availability line. The flag's URL belongs on /agents,
+            where there is room to explain it; here it stays in words. */}
+        <p class="mt-6 text-meta text-on-dark-muted">
+          The MCP server works today in any agent that speaks MCP, free with an
+          account. Browser agents are newer: WebMCP works today in Chrome with
+          an experimental flag switched on, and in the ChatGPT desktop app's
+          browser. In every other browser the site is exactly what it has always
+          been.
+        </p>
 
-            <div class="flex flex-col gap-5 px-6 py-6 font-mono text-meta">
-              <p class="text-on-dark">
-                <span class="text-primary">you</span>
-                {" "}Add a settings screen to Fieldnote, use our icons.
-              </p>
-              <p class="text-on-dark">
-                <span class="text-teal">agent</span>
-                {" "}Pulled 4 icons from your "Fieldnote UI" collection, all Tabler,
-                all stroke 1.5:
-              </p>
-              <ul class="flex flex-col gap-1 pl-6 text-on-dark">
-                <li>settings &middot; bell &middot; user-circle &middot; logout</li>
-              </ul>
-              <p class="text-on-dark">
-                <span class="text-teal">agent</span>
-                {" "}Written as SwiftUI Shapes into
-                {" "}<span class="text-blue">Views/Settings/Icons.swift</span>.
-                {" "}One icon in that screen was from Feather and off-system - swapped
-                for the Tabler equivalent already in your collection.
-              </p>
+        {/* Clearly labelled illustrations - not screenshots of one real
+            session. Both servers behind them are live. */}
+        <div class="mt-12 grid gap-6 md:grid-cols-2">
+          <figure>
+            <div class="overflow-hidden rounded-card border-2 border-ink-shadow-soft bg-ink-deep">
+              <div
+                class="flex items-center gap-2 border-b-2 border-ink-shadow-soft px-5 py-3"
+              >
+                <span class="size-3 rounded-tag bg-on-dark-muted"></span>
+                <span class="size-3 rounded-tag bg-on-dark-muted"></span>
+                <span class="size-3 rounded-tag bg-on-dark-muted"></span>
+                <span class="ml-2 text-pill font-bold text-on-dark-muted uppercase">
+                  Illustration &middot; in your editor
+                </span>
+              </div>
+
+              <div class="flex flex-col gap-5 px-6 py-6 font-mono text-meta">
+                <p class="text-on-dark">
+                  <span class="text-primary">you</span>
+                  {" "}Add a settings screen to Fieldnote, use our icons.
+                </p>
+                <p class="text-on-dark">
+                  <span class="text-teal">agent</span>
+                  {" "}Pulled 4 icons from your "Fieldnote UI" collection, all Tabler,
+                  all stroke 1.5:
+                </p>
+                <ul class="flex flex-col gap-1 pl-6 text-on-dark">
+                  <li>settings &middot; bell &middot; user-circle &middot; logout</li>
+                </ul>
+                <p class="text-on-dark">
+                  <span class="text-teal">agent</span>
+                  {" "}Written as SwiftUI Shapes into
+                  {" "}<span class="text-blue">Views/Settings/Icons.swift</span>.
+                  {" "}One icon in that screen was from Feather and off-system - swapped
+                  for the Tabler equivalent already in your collection.
+                </p>
+              </div>
             </div>
-          </div>
-          <figcaption class="mt-3 text-meta text-on-dark-muted">
-            An illustration of the exchange - the MCP server behind it is live
-            now; connect yours from the dashboard.
-          </figcaption>
-        </figure>
+            <figcaption class="mt-3 text-meta text-on-dark-muted">
+              An illustration of the exchange - the MCP server behind it is live
+              now; connect yours from the dashboard.
+            </figcaption>
+          </figure>
+
+          <figure>
+            <div class="overflow-hidden rounded-card border-2 border-ink-shadow-soft bg-ink-deep">
+              <div
+                class="flex items-center gap-2 border-b-2 border-ink-shadow-soft px-5 py-3"
+              >
+                <span class="size-3 rounded-tag bg-on-dark-muted"></span>
+                <span class="size-3 rounded-tag bg-on-dark-muted"></span>
+                <span class="size-3 rounded-tag bg-on-dark-muted"></span>
+                <span class="ml-2 text-pill font-bold text-on-dark-muted uppercase">
+                  Illustration &middot; in your browser
+                </span>
+              </div>
+
+              <div class="flex flex-col gap-5 px-6 py-6 font-mono text-meta">
+                <p class="text-on-dark">
+                  <span class="text-primary">you</span>
+                  {" "}Fill my "Fieldnote UI" collection for the settings screen.
+                </p>
+                <p class="text-on-dark">
+                  <span class="text-teal">agent</span>
+                  {" "}Searched "settings", kept Tabler and outline only. 34 icons in
+                  your grid now.
+                </p>
+                <p class="text-on-dark">
+                  <span class="text-teal">agent</span>
+                  {" "}Added 4 of them to the collection, restyled to its stroke:
+                </p>
+                <ul class="flex flex-col gap-1 pl-6 text-on-dark">
+                  <li>settings &middot; bell &middot; user-circle &middot; logout</li>
+                </ul>
+                <p class="text-on-dark">
+                  <span class="text-primary">you</span>
+                  {" "}Swap the bell.
+                </p>
+              </div>
+            </div>
+            <figcaption class="mt-3 text-meta text-on-dark-muted">
+              An illustration of the same job in the browser - every step of it
+              happens on the page you are watching.
+            </figcaption>
+          </figure>
+        </div>
 
         <div class="mt-10 flex flex-wrap items-center gap-4">
           <Button href="/agents">
             <Icon name="sparkle" slot="icon" />
-            See how it works
+            See both ways
           </Button>
         </div>
       </div>

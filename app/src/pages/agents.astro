@@ -7,13 +7,24 @@ import Card from "../components/Card.astro";
 import Icon from "../components/Icon.astro";
 import Pill from "../components/Pill.astro";
 import { siteStats } from "../lib/site";
+import { WEBMCP_SURFACES, WEBMCP_TOOL_COUNT } from "../lib/webmcp/catalog";
+
+/*
+ * The agents page. Two rails, told in order: the MCP server a coding agent
+ * connects to from an editor, then WebMCP, where the agent driving a browser
+ * works this site next to the person.
+ *
+ * This is the detail context, so it is allowed to go technical - the flag
+ * path and the tool names live here and nowhere else. The marketing sections
+ * that link to it stay in plain words.
+ */
 
 const stats = await siteStats();
 ---
 
 <Layout
-  title="Icons for coding agents - MCP server | Motificons"
-  description={`Give Claude Code, Codex and Cursor ${stats.icons} icons over MCP: searched by intent, filtered to your collection's style, delivered as SVG, JSX or SwiftUI.`}
+  title="Icons for AI agents - MCP server and WebMCP | Motificons"
+  description={`Give Claude Code, Codex and Cursor ${stats.icons} icons over MCP - and let the AI agent in your browser search, restyle and collect them on the site itself.`}
 >
   <Header active="agents" />
 
@@ -23,22 +34,34 @@ const stats = await siteStats();
         Stop letting your agent guess icons.
       </h1>
       <p class="mt-5 text-ink-muted">
-        Motificons gives Claude Code, Codex and Cursor {stats.icons}+ icons over
-        MCP - searched by intent, filtered to your collection's style, delivered as
-        production-ready SVG, JSX or SwiftUI.
+        Agents get the same library you get: {stats.icons}+ open-source icons,
+        your collections, your style. There are two ways in. Your coding agent
+        connects to the Motificons server from your editor, over MCP. Or the AI
+        agent in your browser works this site with you, over WebMCP - searching
+        the grid, restyling the preview and filling your collection while you
+        watch.
       </p>
 
-      {/* Status strip: MCP server shipped at launch (2026-08-10). */}
+      {/* Status strip: both rails shipped - MCP 2026-08-10, WebMCP 2026-08-31. */}
       <div class="mt-8 rounded-card bg-banner px-6 py-4 text-ink">
         <p>
-          <strong class="font-bold">Live now.</strong>
-          {" "}The MCP server is free with an account. Create your API key in
-          the dashboard and connect your agent in one minute.
+          <strong class="font-bold">Both are live.</strong>
+          {" "}The MCP server is free with an account: make a key in the
+          dashboard and connect your agent in a minute. The browser tools need
+          no setup at all - they are already on every page, and a browser agent
+          that supports WebMCP finds them the moment it asks what the page can
+          do.
         </p>
       </div>
 
       <section class="mt-16">
-        <h2 class="text-h2 font-semibold">What it does</h2>
+        <h2 class="text-h2 font-semibold">In your editor: the MCP server</h2>
+        <p class="mt-3 text-ink-muted">
+          Claude Code, Codex and Cursor point at the Motificons server and get
+          the library, your collections and production-ready code without
+          leaving the editor.
+        </p>
+
         <div class="mt-8 grid gap-6 md:grid-cols-3">
           <Card variant="blue">
             <Icon name="search" size={24} class="text-ink" />
@@ -72,15 +95,154 @@ const stats = await siteStats();
             </p>
           </Card>
         </div>
-      </section>
 
-      <section class="mt-16">
-        <h2 class="text-h2 font-semibold">Setup</h2>
+        <h3 class="mt-10 text-h3 font-semibold">Setup</h3>
         <p class="mt-3 text-ink-muted">
           A few lines in your agent's MCP config, using the API key that comes
           with your free account. Create it from your dashboard's "Coding agents (MCP)"
           section, which also has ready-made, copy-paste configs for Claude
           Code, Cursor and Codex with your key already filled in.
+        </p>
+      </section>
+
+      <section class="mt-16">
+        <h2 class="text-h2 font-semibold">In your browser: WebMCP</h2>
+        <p class="mt-3 text-ink-muted">
+          WebMCP is a new browser standard. Instead of leaving an AI agent to
+          guess at the buttons on a page, the page tells it what it can do.
+          Motificons offers {WEBMCP_TOOL_COUNT} things an agent can do here, and
+          every one of them is something you can do yourself: it presses the
+          site's real controls, on the page you have open, while you watch.
+        </p>
+
+        <div class="mt-8 grid gap-6 md:grid-cols-3">
+          <Card variant="violet">
+            <Icon name="search" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">It works the real site</h3>
+            <p class="mt-2 text-meta">
+              The search runs in the grid you are looking at. The filter pills
+              flip. The preview restyles. The tile lands in your collection.
+              Nothing happens in a tab you cannot see.
+            </p>
+          </Card>
+
+          <Card variant="blue">
+            <Icon name="check" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">It can only do what you can</h3>
+            <p class="mt-2 text-meta">
+              The agent acts as you, in your session, through the same routes
+              your own clicks take. Same limits, same rules. There is no back
+              door and nothing it can reach that you cannot.
+            </p>
+          </Card>
+
+          <Card variant="teal">
+            <Icon name="star" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">You can take over</h3>
+            <p class="mt-2 text-meta">
+              Scroll, click, edit, undo, close the tab - the page is still
+              yours. When the pick is a taste call, the agent can open the Add
+              icons panel and hand it back to you instead of choosing.
+            </p>
+          </Card>
+        </div>
+
+        <h3 class="mt-10 text-h3 font-semibold">
+          What the agent can do, page by page
+        </h3>
+        <p class="mt-3 text-ink-muted">
+          Tools appear and disappear with the page: an agent on the icon
+          library gets the search tools, an agent on one of your collections
+          gets the collection tools. Nothing is offered where it would not work.
+        </p>
+
+        <div class="mt-6 overflow-x-auto scroll-light">
+          <table class="w-full min-w-[720px] border-collapse text-left">
+            <caption class="sr-only">
+              WebMCP tools this site offers, by page
+            </caption>
+            <thead>
+              <tr class="border-b-2 border-ink">
+                <th scope="col" class="py-4 pr-4 text-body font-bold">Page</th>
+                <th scope="col" class="py-4 pr-4 text-body font-bold">Tool</th>
+                <th scope="col" class="py-4 text-body font-bold">What it does</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                WEBMCP_SURFACES.flatMap((surface) =>
+                  surface.tools.map((tool, index) => (
+                    <tr class="border-b border-ink/10 align-top">
+                      {index === 0 && (
+                        <th
+                          scope="rowgroup"
+                          rowspan={surface.tools.length}
+                          class="py-4 pr-4 text-left font-normal"
+                        >
+                          <span class="font-semibold">{surface.surface}</span>
+                          <span class="mt-1 block text-meta text-ink-muted">
+                            {surface.where}
+                          </span>
+                        </th>
+                      )}
+                      <td class="py-4 pr-4 font-mono text-meta">{tool.name}</td>
+                      <td class="py-4 text-meta">{tool.does}</td>
+                    </tr>
+                  )),
+                )
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="mt-16">
+        <h2 class="text-h2 font-semibold">Try it</h2>
+        <p class="mt-3 text-ink-muted">
+          Browser agents are new, so not many browsers can do this yet. Two
+          work today.
+        </p>
+
+        <div class="mt-8 grid gap-6 md:grid-cols-2">
+          <Card variant="blue">
+            <Icon name="bolt" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">In Chrome</h3>
+            <ol class="mt-3 flex list-decimal flex-col gap-2 pl-5 text-meta">
+              <li>
+                Chrome 149 or newer. Open
+                {" "}<span
+                  class="rounded-tag bg-surface px-2 py-0.5 font-mono text-meta"
+                  >chrome://flags/#enable-webmcp-testing</span
+                >
+                {" "}and switch it on.
+              </li>
+              <li>Restart the browser when it asks.</li>
+              <li>
+                Open motificons.app and ask the browser's AI for the icons you
+                need.
+              </li>
+            </ol>
+          </Card>
+
+          <Card variant="teal">
+            <Icon name="sparkle" size={24} class="text-ink" />
+            <h3 class="mt-4 text-h3 font-semibold">
+              In the ChatGPT desktop app
+            </h3>
+            <ol class="mt-3 flex list-decimal flex-col gap-2 pl-5 text-meta">
+              <li>Open its built-in browser. Nothing to switch on.</li>
+              <li>Go to motificons.app.</li>
+              <li>
+                Ask for the job, not the clicks: "find four outline icons for a
+                settings screen and put them in a collection".
+              </li>
+            </ol>
+          </Card>
+        </div>
+
+        <p class="mt-6 text-meta text-ink-muted">
+          Anywhere else, nothing changes: the tools are simply never asked for,
+          and the site works exactly as it does for everybody.
         </p>
       </section>
 
