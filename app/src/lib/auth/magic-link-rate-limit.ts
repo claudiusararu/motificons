@@ -110,6 +110,29 @@ async function checkWindow(
 }
 
 /**
+ * The per-IP bound on its own: `IP_LIMIT` requests per `IP_WINDOW_MS` under
+ * the caller's own key prefix.
+ *
+ * Exported because the magic-link door is no longer the only thing that needs
+ * "5 attempts a minute from one address" - demo-access.ts guards a secret-key
+ * endpoint with exactly the same shape. Each caller passes its own `prefix`
+ * so the budgets stay separate (a judge opening the demo link must not eat a
+ * shared IP's sign-in budget, and vice versa) while the window, the limit and
+ * the fail-open posture stay defined in one place.
+ *
+ * Returns true when the caller is over budget.
+ */
+export async function checkIpWindow(
+  kv: KVNamespace,
+  prefix: string,
+  ip: string,
+  now = Date.now(),
+): Promise<boolean> {
+  const key = `${prefix}:${ip}:${windowBucket(now, IP_WINDOW_MS)}`;
+  return checkWindow(kv, key, IP_LIMIT, IP_WINDOW_MS);
+}
+
+/**
  * The full decision: checks the IP bound first (cheaper - no hashing), then
  * the email bound only if the IP bound passed. Both are counted
  * independently of whether the OTHER bound ends up tripping this same call,
@@ -122,8 +145,7 @@ export async function checkMagicLinkRateLimit(
   email: string,
   now = Date.now(),
 ): Promise<RateLimitDecision> {
-  const ipKey = `auth-ip:${ip}:${windowBucket(now, IP_WINDOW_MS)}`;
-  if (await checkWindow(kv, ipKey, IP_LIMIT, IP_WINDOW_MS)) {
+  if (await checkIpWindow(kv, "auth-ip", ip, now)) {
     return { limited: true, reason: "ip" };
   }
 

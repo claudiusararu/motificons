@@ -5,7 +5,7 @@ import {
   parseMagicLinkMode,
   refusalResponse,
 } from "../../../lib/auth/magic-link-guard";
-import type { KVNamespace } from "../../../lib/auth/magic-link-rate-limit";
+import { clientIp, meterKV } from "../../../lib/request-env";
 import { turnstileConfig } from "../../../lib/auth/turnstile";
 import { userExistsByEmail } from "../../../lib/auth/account-lookup";
 import { db } from "../../../db/client";
@@ -23,17 +23,6 @@ const MAGIC_LINK_SIGN_IN_PATH = "/api/auth/sign-in/magic-link";
 const MODE_HEADER = "x-auth-mode";
 const TURNSTILE_HEADER = "x-turnstile-token";
 
-/** Same header precedence as api/search.ts's meter - cf-connecting-ip is
-    Cloudflare's real client IP, x-forwarded-for a fallback for local
-    proxies, clientAddress last since the CF adapter can throw on it in some
-    dev configurations. */
-function clientIp(request: Request, clientAddress: string): string {
-  const forwarded =
-    request.headers.get("cf-connecting-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0];
-  return (forwarded ?? clientAddress ?? "unknown").trim();
-}
-
 /** Reads the target email out of the request body without consuming it
     (`.clone()` - `instance.handler(request)` below still needs the original,
     unread body). */
@@ -46,21 +35,6 @@ async function readEmail(request: Request): Promise<string> {
        validation does that (see the endpoint's real 400 shape this matches:
        {"message": "...", "code": "VALIDATION_ERROR"}). */
     return "";
-  }
-}
-
-/** Imported lazily, same reasoning as api/search.ts: a static
-    "cloudflare:workers" import is not resolvable everywhere the dev module
-    graph is built. No METER binding is a misconfiguration, not a reason to
-    block sign-in - fail open, same as a missing binding does for search. */
-async function meterKV(): Promise<KVNamespace | undefined> {
-  try {
-    const mod = (await import("cloudflare:workers")) as unknown as {
-      env?: { METER?: KVNamespace };
-    };
-    return mod.env?.METER;
-  } catch {
-    return undefined;
   }
 }
 

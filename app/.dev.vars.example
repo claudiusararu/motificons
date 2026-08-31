@@ -19,3 +19,10 @@ RESEND_API_KEY=
 # is set with `wrangler secret put TURNSTILE_SECRET`.
 PUBLIC_TURNSTILE_SITE_KEY=
 TURNSTILE_SECRET=
+
+# Judge/demo access door (GET /demo-access?key=...). Signs the visitor into
+# the single shared demo@motificons.app account, which must already exist.
+# Leave blank and the endpoint 404s - the feature is off everywhere by
+# default, dev included. In production set it with
+# `wrangler secret put DEMO_ACCESS_KEY` and delete it after judging.
+DEMO_ACCESS_KEY=

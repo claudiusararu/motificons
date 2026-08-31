@@ -43,3 +43,35 @@ export async function userExistsByEmail(
 
   return rows.length > 0;
 }
+
+/** Returns the email exactly as stored, or null when no account matches -
+    injectable, same reasoning as `UserExistsLookup`. */
+export type StoredEmailLookup = (email: string) => Promise<string | null>;
+
+/**
+ * Same case-insensitive match as `userExistsByEmail`, but hands back the
+ * stored spelling instead of a boolean.
+ *
+ * Why the spelling matters: Better Auth's own `findUserByEmail` is fed
+ * whatever string a caller puts in a magic-link verification value, and this
+ * app's magic-link plugin creates a user when that lookup misses. Any server
+ * flow that mints a session for an account it has already confirmed exists
+ * must therefore hand Better Auth the exact stored address - a case-folded
+ * copy risks silently creating a second account instead of signing into the
+ * first. See demo-access.ts, the one such flow.
+ */
+export async function findStoredEmail(
+  database: Database,
+  email: string,
+): Promise<string | null> {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+
+  const rows = await database
+    .select({ email: user.email })
+    .from(user)
+    .where(sql`lower(${user.email}) = ${normalized}`)
+    .limit(1);
+
+  return rows[0]?.email ?? null;
+}

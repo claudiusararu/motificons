@@ -19,6 +19,11 @@ Allow: /api/icon/
 # Internal design reference, not product.
 Disallow: /styleguide
 
+# The judge/demo sign-in door. Off unless DEMO_ACCESS_KEY is set, and it needs
+# that key in the query string anyway, so a crawler would only ever collect
+# 404s here - and the URL is not meant to be indexed while it is live.
+Disallow: /demo-access
+
 # AI crawler access is intentional policy, not an oversight: these agents are
 # how Motificons gets cited by answer engines (see llms.txt), so they get
 # their own explicit stanzas rather than being left to fall through to
@@ -32,6 +37,7 @@ Disallow: /api/
 Allow: /api/export/
 Allow: /api/icon/
 Disallow: /styleguide
+Disallow: /demo-access
 
 User-agent: ClaudeBot
 Allow: /
@@ -39,6 +45,7 @@ Disallow: /api/
 Allow: /api/export/
 Allow: /api/icon/
 Disallow: /styleguide
+Disallow: /demo-access
 
 User-agent: Claude-Web
 Allow: /
@@ -46,6 +53,7 @@ Disallow: /api/
 Allow: /api/export/
 Allow: /api/icon/
 Disallow: /styleguide
+Disallow: /demo-access
 
 User-agent: anthropic-ai
 Allow: /
@@ -53,6 +61,7 @@ Disallow: /api/
 Allow: /api/export/
 Allow: /api/icon/
 Disallow: /styleguide
+Disallow: /demo-access
 
 User-agent: PerplexityBot
 Allow: /
@@ -60,6 +69,7 @@ Disallow: /api/
 Allow: /api/export/
 Allow: /api/icon/
 Disallow: /styleguide
+Disallow: /demo-access
 
 User-agent: Google-Extended
 Allow: /
@@ -67,6 +77,7 @@ Disallow: /api/
 Allow: /api/export/
 Allow: /api/icon/
 Disallow: /styleguide
+Disallow: /demo-access
 
 User-agent: CCBot
 Allow: /
@@ -74,6 +85,7 @@ Disallow: /api/
 Allow: /api/export/
 Allow: /api/icon/
 Disallow: /styleguide
+Disallow: /demo-access
 
 User-agent: Bytespider
 Allow: /
@@ -81,5 +93,6 @@ Disallow: /api/
 Allow: /api/export/
 Allow: /api/icon/
 Disallow: /styleguide
+Disallow: /demo-access
 
 Sitemap: https://motificons.app/sitemap.xml
