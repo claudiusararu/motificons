@@ -18,7 +18,22 @@ Icon aggregators solve finding an icon. They do not solve the two problems that 
 - **Free accounts**: email magic link, no password. An account adds 5 collections, unlimited search and an MCP key. Everything else works without one - anonymous visitors get every export format and 25 searches a day.
 - **A macOS app**: Spotlight-style hotkey search, offline, copies code straight to the clipboard.
 
-## For coding agents
+## For agents in your browser: WebMCP
+
+Motificons implements [WebMCP](https://webmachinelearning.github.io/webmcp/), the proposed W3C standard that lets a page offer structured tools to the AI agent driving the browser. Instead of an agent guessing at buttons, every Motificons page registers what it can actually do - 16 tools across four surfaces:
+
+- **/search**: `search_icons`, `refine_search`, `open_icon`, `get_search_state`
+- **Icon pages**: `get_icon`, `style_icon`, `get_icon_code`, `download_icon`
+- **Collection pages** (signed in): `get_collection`, `add_icon_to_collection`, `remove_icon_from_collection`, `set_collection_styles`, `open_add_icons_panel`, `download_collection`
+- **/dashboard** (signed in): `list_collections`, `create_collection`
+
+Every tool drives the real UI through the page's own handlers - the human sees the search box fill, the facet pills flip, the preview restyle, the tile land in the grid - and can take over at any point. Tools respect the same rules the human has: the anonymous search meter applies to agents too, and a "ships as drawn" icon refuses a recolor with the same sentence the page shows.
+
+**Try it**: Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled, or the ChatGPT desktop app's built-in browser - open [motificons.app](https://motificons.app) and ask the agent for the icons you need. In any other browser the registration silently no-ops and nothing changes.
+
+The implementation lives in [`app/src/lib/webmcp/`](app/src/lib/webmcp/) - a small dependency-free bridge (`bridge.ts`, feature-detect + `document.modelContext.registerTool` + AbortController cleanup) and one pure, fully-tested tool module per surface. Islands expose a typed imperative handle; tools are pure functions over that handle, which is what keeps them testable without a DOM.
+
+## For coding agents: the MCP server
 
 The MCP server at `mcp.motificons.app` is free with an account. Nine tools: search and fetch icons, manage collections, get styled exports, and `audit_repo_icons` - point it at a codebase and it reports mixed sets, orphan SVGs and off-collection icons, checked against your curated collection rather than generic heuristics.
 
