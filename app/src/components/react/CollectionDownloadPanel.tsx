@@ -199,7 +199,13 @@ export default function CollectionDownloadPanel({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      /* Not revoked synchronously: Chrome resolves the blob at click time,
+         but an external download manager (the ChatGPT desktop browser's, for
+         one) fetches the URL after the click returns - revoking immediately
+         made those downloads intermittently register then stop. A minute is
+         enough for any pipeline to open the blob; the memory is reclaimed on
+         navigation regardless. */
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
 
       setStatus("done");
       return { ok: true, count: items.length, format };
