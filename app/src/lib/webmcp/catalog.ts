@@ -94,7 +94,7 @@ export const WEBMCP_SURFACES: WebMcpSurface[] = [
       },
       {
         name: "open_add_icons_panel",
-        does: "Opens the Add icons panel with a search already run, and leaves the choice to you.",
+        does: "Opens the Add icons panel with a search already run - while it is open the icon search tools work in it too, and the choice stays yours.",
       },
       {
         name: "download_collection",
@@ -110,7 +110,10 @@ export const WEBMCP_SURFACES: WebMcpSurface[] = [
         name: "list_collections",
         does: "Lists the collections you already have.",
       },
-      { name: "create_collection", does: "Makes a new, empty one." },
+      {
+        name: "create_collection",
+        does: "Makes a new, empty one and opens it, so the work can carry on inside it.",
+      },
     ],
   },
 ];

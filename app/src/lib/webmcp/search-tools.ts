@@ -1,5 +1,6 @@
 /**
- * The WebMCP tools the icon library page (/search) offers to an agent.
+ * The WebMCP tools the icon search offers to an agent - on the icon library
+ * page (/search), and inside a collection's open "Add icons" panel.
  *
  * The point of every one of these is that the agent and the human are looking
  * at the same screen. A tool call here does not run a private, headless query
@@ -21,6 +22,14 @@
  * Payloads stay small deliberately: names, sets and URLs, never SVG bodies.
  * An agent that wants the artwork follows the `url` to the icon page, where
  * the download and export UI already lives.
+ *
+ * TWO MODES, because the same island powers two screens (see `SearchToolsMode`
+ * below). On /search the full four tools are offered. Inside a collection's
+ * "Add icons" slide-over the search tools are offered without `open_icon`:
+ * there, the human has a panel open over their collection, and navigating the
+ * tab away to an icon page mid-add would throw that work on the floor. In the
+ * panel, the way to act on a hit is `add_icon_to_collection` from
+ * collection-tools.ts, which every hit's `prefix` and `name` feed directly.
  */
 
 import type { SearchHit } from "../search-config";
@@ -145,6 +154,34 @@ export interface SearchToolHandle {
   navigate(path: string): void;
 }
 
+/**
+ * Which screen the island offering these tools is mounted on.
+ *
+ *   "page"              /search itself: all four tools, `open_icon` included.
+ *   "collection-panel"  the "Add icons" slide-over on a collection page: the
+ *                       three search tools, no `open_icon` (see the header).
+ */
+export type SearchToolsMode = "page" | "collection-panel";
+
+/** Appended to the searching tools' descriptions in the panel, so the agent
+    knows which screen it is driving and what to do with a hit once it has
+    one. The human sees every one of these searches happen inside the panel
+    they already have open - that visibility is the point of driving the real
+    island instead of querying the API on the side. */
+const PANEL_SEARCH_SUFFIX =
+  " You are inside a collection's open 'Add icons' panel, not the library " +
+  "page: the results appear in that panel, on top of the collection the human " +
+  "is building, and they can watch each search land. To put a hit into the " +
+  "collection, pass its `prefix` and `name` to add_icon_to_collection - the " +
+  "same save the star on the result performs. Nothing here navigates away, so " +
+  "the panel and their collection stay put.";
+
+/** The note that rides along with every panel-mode result, for an agent that
+    read the hits and not the description. */
+const PANEL_RESULT_NOTE =
+  "These results are showing in the collection's open Add icons panel. Add " +
+  "one with add_icon_to_collection, passing a hit's prefix and name.";
+
 /** Default and ceiling for how many hits come back to the agent. The human's
     grid always shows the full first page regardless - this only trims the
     JSON, so a broad query does not return a hundred rows nobody asked for. */
@@ -225,7 +262,11 @@ function reportFilters(state: SearchSnapshot) {
 
 /** Turns a snapshot into the JSON an agent gets back. Shared by
     `search_icons` and `refine_search` so the two can never drift. */
-function reportOutcome(state: SearchSnapshot, hitLimit: number) {
+function reportOutcome(
+  state: SearchSnapshot,
+  hitLimit: number,
+  mode: SearchToolsMode,
+) {
   const { outcome } = state;
   if (outcome.status === "limited") return LIMITED_RESULT;
   if (outcome.status === "error") return { error: outcome.message };
@@ -247,6 +288,7 @@ function reportOutcome(state: SearchSnapshot, hitLimit: number) {
     hits,
     meter: reportMeter(outcome.meter),
     applied: reportFilters(state),
+    ...(mode === "collection-panel" ? { note: PANEL_RESULT_NOTE } : {}),
   };
 }
 
@@ -255,9 +297,19 @@ function reportOutcome(state: SearchSnapshot, hitLimit: number) {
  *
  * Pure: no globals beyond what `handle` reaches for. Pass the result straight
  * to `registerWebMcpTools`.
+ *
+ * `mode` is the screen the island is on. In "collection-panel" the returned
+ * list is the same three searching tools minus `open_icon`, with descriptions
+ * that say where the results are appearing and how to act on one.
  */
-export function createSearchTools(handle: SearchToolHandle): WebMcpTool[] {
-  return [
+export function createSearchTools(
+  handle: SearchToolHandle,
+  mode: SearchToolsMode = "page",
+): WebMcpTool[] {
+  const inPanel = mode === "collection-panel";
+  const panelSuffix = inPanel ? PANEL_SEARCH_SUFFIX : "";
+
+  const tools: WebMcpTool[] = [
     {
       name: "search_icons",
       title: "Search icons",
@@ -275,7 +327,8 @@ export function createSearchTools(handle: SearchToolHandle): WebMcpTool[] {
         "rather than sweeping; a free account makes search unlimited. Returns " +
         "the total match count, a compact list of hits with a page URL each, " +
         "and the remaining allowance. Never returns SVG source - open an " +
-        "icon's URL for the artwork and download options.",
+        "icon's URL for the artwork and download options." +
+        panelSuffix,
       inputSchema: {
         type: "object",
         properties: {
@@ -323,7 +376,7 @@ export function createSearchTools(handle: SearchToolHandle): WebMcpTool[] {
           ...(sets === undefined ? {} : { sets }),
           ...(category.present ? { category: category.value } : {}),
         });
-        return reportOutcome(state, readHitLimit(input));
+        return reportOutcome(state, readHitLimit(input), mode);
       },
     },
 
@@ -339,7 +392,8 @@ export function createSearchTools(handle: SearchToolHandle): WebMcpTool[] {
         "three-state: leave it out to keep the current filter, pass null to " +
         "clear it, pass a value to set it. Returns the same shape as " +
         "search_icons. Refining re-runs the search, so it also draws on the " +
-        "anonymous daily allowance.",
+        "anonymous daily allowance." +
+        panelSuffix,
       inputSchema: {
         type: "object",
         properties: {
@@ -382,7 +436,7 @@ export function createSearchTools(handle: SearchToolHandle): WebMcpTool[] {
           ...(category.present ? { category: category.value } : {}),
           ...(tier.present ? { tier: tier.value } : {}),
         });
-        return reportOutcome(state, readHitLimit(input));
+        return reportOutcome(state, readHitLimit(input), mode);
       },
     },
 
@@ -427,9 +481,12 @@ export function createSearchTools(handle: SearchToolHandle): WebMcpTool[] {
 
     {
       name: "get_search_state",
-      title: "Read the search page state",
+      title: inPanel ? "Read the Add icons panel's search state" : "Read the search page state",
       description:
-        "Read what the icon library page is currently showing - the query, " +
+        (inPanel
+          ? "Read what the collection's open 'Add icons' panel is currently " +
+            "showing - the query, "
+          : "Read what the icon library page is currently showing - the query, ") +
         "every active filter, how many icons matched, and how much of the " +
         "anonymous daily search allowance is left. Changes nothing and costs " +
         "no allowance. Use it to pick up where the human left off before you " +
@@ -464,4 +521,10 @@ export function createSearchTools(handle: SearchToolHandle): WebMcpTool[] {
       },
     },
   ];
+
+  /* In the panel, `open_icon` is the one tool that would undo the human's
+     work: it navigates the whole tab away from the collection they have open,
+     mid-add. The icon page is still one click away for them - it is just not
+     something the agent should do behind an open panel. */
+  return inPanel ? tools.filter((tool) => tool.name !== "open_icon") : tools;
 }

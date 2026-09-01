@@ -753,14 +753,33 @@ export default function SearchIsland({
     };
   }, [toggle, selectCategory]);
 
+  /* A boolean, not `collectionTarget` itself: the collection page rebuilds
+     that object every render, and the effect below must not tear the tools
+     down and put them back on each one. */
+  const inCollectionPanel = Boolean(collectionTarget);
+
   useEffect(() => {
-    /* Only the library page itself offers these. The same island also powers
-       a collection's "Add icons" slide-over (`collectionTarget`), and two
-       live registrations would give the agent two tools with one name and no
-       way to tell which screen it was driving. */
-    if (collectionTarget) return;
-    return registerWebMcpTools(createSearchTools(webmcpHandle));
-  }, [collectionTarget, webmcpHandle]);
+    /* Both screens this island powers offer search to an agent:
+
+       - /search: the full set, `open_icon` included.
+       - a collection's "Add icons" slide-over: the three searching tools,
+         no `open_icon` (see search-tools.ts). Without them, an agent on a
+         collection page can add an icon only if it already knows its exact
+         name - it has no way to FIND one. The results render in the panel the
+         human has open, so they watch every search happen.
+
+       Two islands offering one name would leave the agent unable to tell
+       which screen it was driving. No page mounts both today (a collection
+       page has no full search island), and the bridge skips a name that is
+       already live if one ever does.
+
+       Registration follows this island's mount, which IS the panel's open
+       state: SlideOver unmounts its children on close, so closing the panel
+       runs this cleanup and the search tools disappear with it. */
+    return registerWebMcpTools(
+      createSearchTools(webmcpHandle, inCollectionPanel ? "collection-panel" : "page"),
+    );
+  }, [inCollectionPanel, webmcpHandle]);
 
   /* Selected sets always stay visible, so a filter can be removed from the
      rail even when the list is collapsed or filtered to something else. */

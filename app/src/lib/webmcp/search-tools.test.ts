@@ -85,6 +85,9 @@ function fakeHandle(answer: SearchSnapshot) {
       current = next;
     },
     tools: () => createSearchTools(handle),
+    /* The same island, mounted inside a collection's open "Add icons"
+       slide-over. */
+    panelTools: () => createSearchTools(handle, "collection-panel"),
   };
 }
 
@@ -400,5 +403,59 @@ describe("get_search_state", () => {
     const result = await run(fake.tools(), "get_search_state", {});
     expect(result["limited"]).toBe(true);
     expect(result["meter"]).toEqual({ remaining: 0, limit: 10 });
+  });
+});
+
+/**
+ * The Add-icons panel on a collection page mounts the same island, so it gets
+ * the same searching tools - that is the only way an agent working inside a
+ * collection can FIND an icon rather than having to already know its name.
+ * What must differ: no `open_icon` (it would navigate the tab away from the
+ * collection the human has open, mid-add), and descriptions that say where
+ * the results are appearing and that add_icon_to_collection is what acts on
+ * one.
+ */
+describe("createSearchTools - inside a collection's Add icons panel", () => {
+  it("offers the three searching tools and withholds open_icon", () => {
+    const tools = fakeHandle(snapshot({ status: "idle" })).panelTools();
+    expect(tools.map((tool) => tool.name)).toEqual([
+      "search_icons",
+      "refine_search",
+      "get_search_state",
+    ]);
+  });
+
+  it("points the searching tools at add_icon_to_collection and the open panel", () => {
+    const tools = fakeHandle(snapshot({ status: "idle" })).panelTools();
+    for (const name of ["search_icons", "refine_search"]) {
+      const { description } = toolNamed(tools, name);
+      expect(description).toContain("add_icon_to_collection");
+      expect(description).toContain("Add icons");
+    }
+    expect(toolNamed(tools, "get_search_state").description).toContain("Add icons");
+  });
+
+  it("searches through the same handle, and notes where the results landed", async () => {
+    const fake = fakeHandle(snapshot(results([hit("bell")], null)));
+    const result = await run(fake.panelTools(), "search_icons", { query: "bell" });
+
+    expect(fake.calls).toEqual([{ method: "search", input: { query: "bell" } }]);
+    expect(result["hits"]).toEqual([
+      {
+        name: "bell",
+        set: "Tabler Icons",
+        prefix: "tabler",
+        style: "outline",
+        license: "MIT",
+        url: "/tabler/bell",
+      },
+    ]);
+    expect(String(result["note"])).toContain("add_icon_to_collection");
+  });
+
+  it("leaves the /search results free of the panel note", async () => {
+    const fake = fakeHandle(snapshot(results([hit("bell")], null)));
+    const result = await run(fake.tools(), "search_icons", { query: "bell" });
+    expect(result["note"]).toBeUndefined();
   });
 });

@@ -118,6 +118,48 @@ describe("registerWebMcpTools - registration and cleanup", () => {
   });
 });
 
+describe("registerWebMcpTools - one name, one tool", () => {
+  it("skips a name another island on the page is already offering", () => {
+    const { host, registered } = fakeHost();
+
+    registerWebMcpTools([tool("search_icons", () => "first island")], host);
+    registerWebMcpTools(
+      [tool("search_icons", () => "second island"), tool("only_here", () => "b")],
+      host,
+    );
+
+    expect(registered.map((entry) => entry.tool.name)).toEqual([
+      "search_icons",
+      "only_here",
+    ]);
+  });
+
+  it("hands the name back on cleanup, so the same island can remount", () => {
+    const { host, registered } = fakeHost();
+
+    const cleanup = registerWebMcpTools([tool("search_icons", () => "a")], host);
+    cleanup();
+    registerWebMcpTools([tool("search_icons", () => "b")], host);
+
+    expect(registered.map((entry) => entry.tool.name)).toEqual([
+      "search_icons",
+      "search_icons",
+    ]);
+    expect(registered[1]!.signal!.aborted).toBe(false);
+  });
+
+  it("keeps names per model context, not global", () => {
+    const first = fakeHost();
+    const second = fakeHost();
+
+    registerWebMcpTools([tool("search_icons", () => "a")], first.host);
+    registerWebMcpTools([tool("search_icons", () => "b")], second.host);
+
+    expect(first.registered).toHaveLength(1);
+    expect(second.registered).toHaveLength(1);
+  });
+});
+
 describe("registerWebMcpTools - execute wrapping", () => {
   it("passes input and context through to the handler", async () => {
     const { host, registered } = fakeHost();

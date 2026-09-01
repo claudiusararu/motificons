@@ -27,6 +27,8 @@ Motificons implements [WebMCP](https://webmachinelearning.github.io/webmcp/), th
 - **Collection pages** (signed in): `get_collection`, `add_icon_to_collection`, `remove_icon_from_collection`, `set_collection_styles`, `open_add_icons_panel`, `download_collection`
 - **/dashboard** (signed in): `list_collections`, `create_collection`
 
+Creating a collection opens it, and opening its "Add icons" panel brings the three searching tools (`search_icons`, `refine_search`, `get_search_state`) into that page - so "create a collection called My New App, then search and add these icons" runs from one prompt, every step visible in the panel the person has open. Close the panel and the search tools go with it.
+
 Every tool drives the real UI through the page's own handlers - the human sees the search box fill, the facet pills flip, the preview restyle, the tile land in the grid - and can take over at any point. Tools respect the same rules the human has: the anonymous search meter applies to agents too, and a "ships as drawn" icon refuses a recolor with the same sentence the page shows.
 
 **Try it**: Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled, or the ChatGPT desktop app's built-in browser - open [motificons.app](https://motificons.app) and ask the agent for the icons you need. In any other browser the registration silently no-ops and nothing changes.

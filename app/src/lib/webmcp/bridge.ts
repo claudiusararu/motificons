@@ -22,6 +22,11 @@
  *    opaque rejection has nothing to say to the human. Every `execute` is
  *    wrapped so a throw comes back as `{ error: "..." }`, which the agent can
  *    read out loud.
+ * 4. **One name, one tool.** Registration is additive across islands, so two
+ *    islands could in principle offer the same tool name on one page and leave
+ *    the agent with two `search_icons` and no way to tell which screen it is
+ *    driving. The second claim on a live name is skipped rather than
+ *    registered - see `liveNames` below.
  *
  * Deliberately dependency-free and framework-free: React islands use it
  * through a `useEffect`, and a plain `<script>` could use it unchanged.
@@ -114,6 +119,22 @@ function resolveHost(host?: WebMcpHost): WebMcpHost | undefined {
 }
 
 /**
+ * Which tool names are live on each model context, so a second island cannot
+ * register a name the first one is already offering.
+ *
+ * Keyed on the model context object itself (one per page in a browser, one per
+ * fake host in a test), and weak so nothing here keeps a document alive. Names
+ * are released by the cleanup function, which is what a React island runs on
+ * unmount - so the SAME island can hand a name back and take it again when it
+ * remounts, while two islands alive at once cannot both hold it.
+ *
+ * Today no page mounts two islands offering one name (the collection page has
+ * no full search island, only the embedded one inside the Add-icons panel).
+ * This is the guard that keeps that true if a page ever does.
+ */
+const liveNames = new WeakMap<object, Set<string>>();
+
+/**
  * Registers `tools` with the page's model context and returns the function
  * that removes them again.
  *
@@ -135,9 +156,17 @@ export function registerWebMcpTools(
   const context = resolveHost(host)?.modelContext;
   if (typeof context?.registerTool !== "function") return noop;
 
+  const existing = liveNames.get(context);
+  const names = existing ?? new Set<string>();
+  if (!existing) liveNames.set(context, names);
+
   const controller = new AbortController();
-  let registered = 0;
+  const claimed: string[] = [];
   for (const tool of tools) {
+    /* Someone else on this page is already offering this name. Registering a
+       twin would make the agent's choice a coin flip, so leave the first one
+       standing and skip. */
+    if (names.has(tool.name)) continue;
     try {
       /* Called on the context, not through a detached reference: a real
          implementation is free to need its own `this`. */
@@ -145,13 +174,17 @@ export function registerWebMcpTools(
         { ...tool, execute: safeExecute(tool) },
         { signal: controller.signal },
       );
-      registered += 1;
+      names.add(tool.name);
+      claimed.push(tool.name);
     } catch {
       /* A half-implemented or hostile model context must not be able to break
          the page it is attached to. Skip the tool, keep the island alive. */
     }
   }
 
-  if (registered === 0) return noop;
-  return () => controller.abort();
+  if (claimed.length === 0) return noop;
+  return () => {
+    controller.abort();
+    for (const name of claimed) names.delete(name);
+  };
 }
