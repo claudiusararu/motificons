@@ -68,14 +68,24 @@ const results = (
 function fakeHandle(answer: SearchSnapshot) {
   const calls: { method: string; input: unknown }[] = [];
   let current = answer;
+  /* Snapshots that each SEARCH in turn will land on, for the two-step path
+     (run the query, read the style facet off it, then press the pill). A
+     read - `snapshot()` - never consumes one: it describes the screen as it
+     stands, which is the whole reason the two-step exists. */
+  const landings: SearchSnapshot[] = [];
+  const land = () => {
+    const next = landings.shift();
+    if (next) current = next;
+    return current;
+  };
   const handle: SearchToolHandle = {
     async search(input) {
       calls.push({ method: "search", input });
-      return current;
+      return land();
     },
     async refine(input) {
       calls.push({ method: "refine", input });
-      return current;
+      return land();
     },
     snapshot() {
       calls.push({ method: "snapshot", input: null });
@@ -90,6 +100,10 @@ function fakeHandle(answer: SearchSnapshot) {
     calls,
     answerWith(next: SearchSnapshot) {
       current = next;
+    },
+    /** Queue what each successive search/refine lands on. */
+    thenLandOn(...next: SearchSnapshot[]) {
+      landings.push(...next);
     },
     tools: () => createSearchTools(handle),
     /* The same island, mounted inside a collection's open "Add icons"
@@ -403,16 +417,19 @@ describe("style filtering", () => {
     const message = String(result["error"]);
     expect(message).toContain("squiggly");
     expect(message).toContain("Outline, Fill, Duo, Path");
-    /* Read the screen, then stop: no search ran, so the human's daily
-       allowance paid nothing for the agent's guess. */
-    expect(fake.calls.map((call) => call.method)).toEqual(["snapshot"]);
+    /* The query the agent asked for still ran - it is the search the tool was
+       called to do, and the human sees it. What did NOT happen is a pill
+       press carrying a value no facet has. */
+    expect(fake.calls.map((call) => call.method)).toEqual(["snapshot", "search"]);
+    expect(fake.calls[1]!.input).toEqual({ query: "arrow", styles: [] });
   });
 
   it("refuses an unknown style on refine_search too", async () => {
     const fake = fakeHandle(snapshot(results([], null), "arrow", {}, STYLE_FACET));
     const result = await run(fake.tools(), "refine_search", { styles: ["Outline", "wobble"] });
     expect(String(result["error"])).toContain("wobble");
-    expect(fake.calls.map((call) => call.method)).toEqual(["snapshot"]);
+    expect(fake.calls.map((call) => call.method)).toEqual(["snapshot", "refine"]);
+    expect(fake.calls[1]!.input).toEqual({ styles: [] });
   });
 
   it("switches to a style the narrowed facet no longer lists", async () => {
@@ -430,13 +447,159 @@ describe("style filtering", () => {
     expect(fake.calls.at(-1)).toEqual({ method: "refine", input: { styles: ["Fill"] } });
   });
 
-  it("takes a style on faith when nothing has been searched yet", async () => {
-    const fake = fakeHandle(snapshot({ status: "idle" }, ""));
-    await run(fake.tools(), "search_icons", { query: "arrow", styles: ["outline"] });
-    expect(fake.calls.at(-1)).toEqual({
-      method: "search",
-      input: { query: "arrow", styles: ["outline"] },
+  /**
+   * The production failure this section exists for: on a FRESH page the tools
+   * had no facet to resolve against and pressed the agent's raw wording, so
+   * search_icons {query:"house", styles:["bold"]} lit a BOLD chip over zero
+   * results - the engine matches style exactly, and the label is "Bold".
+   * Nothing unresolved may ever be pressed; the query runs first instead.
+   */
+  describe("on a page that has not searched yet", () => {
+    it("runs the query first, then presses the style the results actually have", async () => {
+      const fake = fakeHandle(snapshot({ status: "idle" }, ""));
+      fake.thenLandOn(
+        /* 1. the query, style filter deliberately cleared - this is where the
+              style facet comes from. */
+        snapshot(results([hit("house")], null, 214), "house", {}, ["Bold", "Outline"]),
+        /* 2. the pill press, in the facet's own spelling. */
+        snapshot(results([hit("house")], null, 11), "house", { style: ["Bold"] }, [
+          "Bold",
+          "Outline",
+        ]),
+      );
+
+      const result = await run(fake.tools(), "search_icons", {
+        query: "house",
+        styles: ["bold"],
+      });
+
+      expect(fake.calls.map((call) => call.method)).toEqual([
+        "snapshot",
+        "search",
+        "refine",
+      ]);
+      expect(fake.calls[1]!.input).toEqual({ query: "house", styles: [] });
+      expect(fake.calls[2]!.input).toEqual({ styles: ["Bold"] });
+      expect(result["total"]).toBe(11);
+      expect((result["applied"] as { styles: string[] }).styles).toEqual(["Bold"]);
     });
+
+    it("carries the other filters into the query step, not into the pill press", async () => {
+      const fake = fakeHandle(snapshot({ status: "idle" }, ""));
+      fake.thenLandOn(
+        snapshot(results([hit("house")], null), "house", { prefix: ["tabler"] }, ["Bold"]),
+        snapshot(results([hit("house")], null), "house", {
+          prefix: ["tabler"],
+          style: ["Bold"],
+        }),
+      );
+      await run(fake.tools(), "search_icons", {
+        query: "house",
+        styles: ["bold"],
+        sets: ["tabler"],
+        category: "buildings",
+      });
+      expect(fake.calls[1]!.input).toEqual({
+        query: "house",
+        sets: ["tabler"],
+        category: "buildings",
+        styles: [],
+      });
+      expect(fake.calls[2]!.input).toEqual({ styles: ["Bold"] });
+    });
+
+    it("never presses a style the query's own results do not have", async () => {
+      const fake = fakeHandle(snapshot({ status: "idle" }, ""));
+      fake.thenLandOn(
+        snapshot(results([hit("house")], null, 214), "house", {}, ["Bold", "Outline"]),
+      );
+
+      const result = await run(fake.tools(), "search_icons", {
+        query: "house",
+        styles: ["squiggly"],
+      });
+
+      expect(String(result["error"])).toContain("squiggly");
+      expect(String(result["error"])).toContain("Bold, Outline");
+      /* The query ran and the human can see it. The pill press did not. */
+      expect(fake.calls.map((call) => call.method)).toEqual(["snapshot", "search"]);
+    });
+
+    it("says what happened when the query itself has no style facet", async () => {
+      const fake = fakeHandle(snapshot({ status: "idle" }, ""));
+      fake.thenLandOn(snapshot(results([], null, 0), "xyzzy"));
+      const result = await run(fake.tools(), "search_icons", {
+        query: "xyzzy",
+        styles: ["bold"],
+      });
+      expect(String(result["error"])).toContain("no style facet");
+      expect(fake.calls.map((call) => call.method)).toEqual(["snapshot", "search"]);
+    });
+
+    it("reports a spent allowance instead of an error about style names", async () => {
+      const fake = fakeHandle(snapshot({ status: "idle" }, ""));
+      fake.thenLandOn(
+        snapshot({ status: "limited", meter: { used: 10, remaining: 0, limit: 10 } }, "house"),
+      );
+      const result = await run(fake.tools(), "search_icons", {
+        query: "house",
+        styles: ["bold"],
+      });
+      expect(result["limited"]).toBe(true);
+      expect(fake.calls.map((call) => call.method)).toEqual(["snapshot", "search"]);
+    });
+
+    it("refuses to refine by style with nothing on screen to read", async () => {
+      const fake = fakeHandle(snapshot({ status: "idle" }, ""));
+      const result = await run(fake.tools(), "refine_search", { styles: ["bold"] });
+      expect(String(result["error"])).toContain("no style facet");
+      expect(String(result["error"])).toContain("search_icons");
+      /* The clearing refine is a no-op on an empty rail; no style was pressed. */
+      expect(
+        fake.calls.filter(
+          (call) => call.method === "refine" && (call.input as { styles?: string[] }).styles?.length,
+        ),
+      ).toHaveLength(0);
+    });
+
+    it("resolves a refine's style against the results the refine itself produced", async () => {
+      /* A category was picked but no style facet has been read yet. */
+      const fake = fakeHandle(snapshot(results([], null), "house"));
+      fake.thenLandOn(
+        snapshot(results([hit("house")], null, 214), "house", { category: "buildings" }, [
+          "Bold",
+        ]),
+        snapshot(results([hit("house")], null, 11), "house", {
+          category: "buildings",
+          style: ["Bold"],
+        }),
+      );
+      const result = await run(fake.tools(), "refine_search", {
+        styles: ["BOLD"],
+        category: "buildings",
+      });
+      expect(fake.calls[1]!.input).toEqual({ category: "buildings", styles: [] });
+      expect(fake.calls[2]!.input).toEqual({ styles: ["Bold"] });
+      expect(result["total"]).toBe(11);
+    });
+  });
+
+  it("tells an agent what to try when the style emptied the grid", async () => {
+    const fake = fakeHandle(
+      snapshot(results([], null, 0), "house", { style: ["Bold"] }, ["Bold", "Outline", "Duo"]),
+    );
+    const result = await run(fake.tools(), "refine_search", { tier: "T1" });
+    const note = String(result["note"]);
+    expect(note).toContain("No results with this style");
+    expect(note).toContain("styles: null");
+    expect(note).toContain("Outline, Duo");
+    expect(note).not.toContain("Bold,");
+  });
+
+  it("leaves the zero-result note off when no style is in force", async () => {
+    const fake = fakeHandle(snapshot(results([], null, 0), "house"));
+    const result = await run(fake.tools(), "refine_search", { tier: "T1" });
+    expect(result["note"]).toBeUndefined();
   });
 
   it("counts styles as a refinement of their own", async () => {

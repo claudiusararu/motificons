@@ -287,20 +287,23 @@ function readClearableList(
  *
  *   - Case. The facet values are the labels icon sets ship ("Outline",
  *     "Fill", "Duo"), while an agent relaying a human writes "outline". The
- *     pill press has to carry the rail's exact spelling or it toggles a facet
- *     value that matches nothing.
- *   - Honesty. A style the current results do not have is a dead end that
- *     would silently empty the human's screen, so it comes back as an error
- *     naming what IS there instead.
+ *     search engine matches style EXACTLY - style=Bold finds 11 houses,
+ *     style=bold finds none - so a press has to carry the rail's own spelling
+ *     or it lights a chip over an empty grid.
+ *   - Honesty. A style the results do not have is a dead end, so it comes
+ *     back as an error naming what IS there instead.
  *
- * With nothing searched yet there is no facet to check against, so the values
- * pass through as written rather than being rejected against an empty list.
+ * Strict on purpose: with no options to check against NOTHING resolves. An
+ * unresolved value is never pressed - the caller runs the query first and
+ * resolves against the facets that come back (see `withResolvedStyles`).
+ * The earlier lenient version pressed the agent's raw lowercase word on a
+ * page that had not searched yet, which is exactly the empty grid this
+ * function exists to prevent.
  */
 function resolveStyles(
   requested: string[],
   options: string[],
 ): { ok: true; styles: string[] } | { ok: false; unknown: string[] } {
-  if (options.length === 0) return { ok: true, styles: requested };
   const byLower = new Map(options.map((option) => [option.toLowerCase(), option]));
   const styles: string[] = [];
   const unknown: string[] = [];
@@ -316,13 +319,75 @@ function resolveStyles(
     It names the styles that ARE available, so the next call is a correction
     rather than another guess. */
 function unknownStyleError(unknown: string[], options: string[]) {
+  const named = unknown.map((value) => `"${value}"`).join(", ");
+  if (options.length === 0) {
+    return {
+      error:
+        `No style called ${named} could be checked: this screen has no style ` +
+        "facet to match against - nothing has been searched yet, or the " +
+        "results carry no style at all. Call search_icons with a query (styles " +
+        "and all): it runs the query first and reads the styles off the fresh " +
+        "results before filtering.",
+    };
+  }
   return {
     error:
-      `No style called ${unknown.map((value) => `"${value}"`).join(", ")} in these ` +
-      `results. The styles available right now are: ${options.join(", ")}. ` +
-      "Style names come from the STYLE facet shown on the page and differ by " +
-      "icon set - pass one of these, or leave styles out to keep every style.",
+      `No style called ${named} in these results. The styles available right ` +
+      `now are: ${options.join(", ")}. Style names come from the STYLE facet ` +
+      "shown on the page and differ by icon set - pass one of these, or leave " +
+      "styles out to keep every style.",
   };
+}
+
+/**
+ * Turns the styles an agent asked for into styles the rail actually has, and
+ * runs the search either way.
+ *
+ * The screen usually knows the answer already: a page mid-session has a style
+ * facet, so one call resolves the wording and one search runs.
+ *
+ * A page that has not searched yet knows nothing - and that is the case that
+ * broke in production. The fix is to do what a person would: run the query
+ * first WITHOUT a style filter, look at the STYLE pills that appear, and only
+ * then press one. Two internal steps, one tool call; the human watches the
+ * results land and then narrow. If the style still does not resolve against
+ * the facets that query produced, nothing is pressed and the agent is told
+ * which styles that query does have.
+ *
+ * `runUnstyled` clears the style filter deliberately: it is the only way to
+ * see the query's whole style vocabulary, and the caller asked to SET styles,
+ * so whatever was selected before was being replaced regardless.
+ */
+async function withResolvedStyles(
+  requested: string[],
+  handle: SearchToolHandle,
+  runUnstyled: () => Promise<SearchSnapshot>,
+): Promise<
+  /* `ranQuery` tells the caller whether the search has ALREADY happened, so
+     it presses only the style pill instead of spending a second allowance on
+     the same query. */
+  | { kind: "styles"; styles: string[]; ranQuery: boolean }
+  | { kind: "settled"; state: SearchSnapshot }
+  | { kind: "error"; error: { error: string } }
+> {
+  const known = resolveStyles(requested, handle.snapshot().styleOptions);
+  if (known.ok) return { kind: "styles", styles: known.styles, ranQuery: false };
+
+  const first = await runUnstyled();
+  /* Nothing on screen to read a facet from - refine_search on a page that has
+     not searched yet. Say so as an error rather than pressing a raw value. */
+  if (first.outcome.status === "idle") {
+    return { kind: "error", error: unknownStyleError(requested, []) };
+  }
+  /* Limited or failed: the style is beside the point now. Report the screen
+     as it is rather than an error about style names. */
+  if (first.outcome.status !== "results") return { kind: "settled", state: first };
+
+  const found = resolveStyles(requested, first.styleOptions);
+  if (!found.ok) {
+    return { kind: "error", error: unknownStyleError(found.unknown, first.styleOptions) };
+  }
+  return { kind: "styles", styles: found.styles, ranQuery: true };
 }
 
 /**
@@ -390,14 +455,36 @@ function reportOutcome(
   }
 
   const hits = outcome.hits.slice(0, hitLimit);
+  /* An agent plans from the response, not from the screen, so an empty grid
+     has to say what to try next - otherwise the only move it can see is
+     another guess at the query. Both notes can apply at once. */
+  const notes = [
+    ...(outcome.total === 0 && state.style.length > 0 ? [zeroStyleNote(state)] : []),
+    ...(mode === "collection-panel" ? [PANEL_RESULT_NOTE] : []),
+  ];
   return {
     total: outcome.total,
     shown: hits.length,
     hits,
     meter: reportMeter(outcome.meter),
     applied: reportFilters(state),
-    ...(mode === "collection-panel" ? { note: PANEL_RESULT_NOTE } : {}),
+    ...(notes.length > 0 ? { note: notes.join(" ") } : {}),
   };
+}
+
+/** What to say when the style filter is what emptied the grid. `styleOptions`
+    carries the styles this query had before a pill narrowed the facet, so the
+    suggestion is a real alternative rather than a shrug. */
+function zeroStyleNote(state: SearchSnapshot): string {
+  const alternatives = state.styleOptions.filter(
+    (option) => !state.style.includes(option),
+  );
+  const suggestion =
+    alternatives.length > 0 ? `, or one of: ${alternatives.join(", ")}` : "";
+  return (
+    `No results with this style. Try the same query without the style filter ` +
+    `(refine_search with styles: null)${suggestion}.`
+  );
 }
 
 /**
@@ -462,9 +549,11 @@ export function createSearchTools(
               "['fill', 'duo']. Common values are outline, fill, duo, path, solid, bold, " +
               "line, regular, rounded, sharp, thin - but styles are labels each icon set " +
               "declares, so the real list is the STYLE facet shown on the page (matching " +
-              "ignores case). A style these results do not have comes back as an error " +
-              "naming the ones they do. Omit to keep the human's current style filter; " +
-              "pass an empty array or null to clear it.",
+              "ignores case). Safe to pass on a page that has not searched yet: the query " +
+              "runs first and the style is matched against the styles that query has. A " +
+              "style those results do not have comes back as an error naming the ones they " +
+              "do. Omit to keep the human's current style filter; pass an empty array or " +
+              "null to clear it.",
           },
           category: {
             type: "string",
@@ -494,23 +583,43 @@ export function createSearchTools(
         const sets = readClearableList(input, "sets");
         const requestedStyles = readClearableList(input, "styles");
         const category = readNullableString(input, "category");
+        const hitLimit = readHitLimit(input);
+        const rest = {
+          ...(sets === undefined ? {} : { sets }),
+          ...(category.present ? { category: category.value } : {}),
+        };
+
         let styles = requestedStyles;
         if (requestedStyles !== undefined && requestedStyles.length > 0) {
-          /* Checked against the screen BEFORE spending a search: a made-up
-             style name would otherwise cost the human an allowance and hand
-             them an empty grid. `snapshot` reads, it does not search. */
-          const options = handle.snapshot().styleOptions;
-          const resolved = resolveStyles(requestedStyles, options);
-          if (!resolved.ok) return unknownStyleError(resolved.unknown, options);
+          /* On a page that has already searched this costs nothing: the style
+             facet is right there. On a fresh page it runs the query first and
+             reads the styles off the result - see `withResolvedStyles`. */
+          const resolved = await withResolvedStyles(requestedStyles, handle, () =>
+            handle.search({ query, ...rest, styles: [] }),
+          );
+          if (resolved.kind === "error") return resolved.error;
+          if (resolved.kind === "settled") {
+            return reportOutcome(resolved.state, hitLimit, mode);
+          }
+          if (resolved.ranQuery) {
+            /* The query step already ran, so only the style pill is left to
+               press - re-running the same search would spend a second
+               allowance for nothing. */
+            return reportOutcome(
+              await handle.refine({ styles: resolved.styles }),
+              hitLimit,
+              mode,
+            );
+          }
           styles = resolved.styles;
         }
+
         const state = await handle.search({
           query,
-          ...(sets === undefined ? {} : { sets }),
+          ...rest,
           ...(styles === undefined ? {} : { styles }),
-          ...(category.present ? { category: category.value } : {}),
         });
-        return reportOutcome(state, readHitLimit(input), mode);
+        return reportOutcome(state, hitLimit, mode);
       },
     },
 
@@ -582,20 +691,41 @@ export function createSearchTools(
               "refine_search needs at least one of sets, styles, category or tier. Use search_icons to change the query itself.",
           };
         }
-        let styles = requestedStyles;
-        if (requestedStyles !== undefined && requestedStyles.length > 0) {
-          const options = handle.snapshot().styleOptions;
-          const resolved = resolveStyles(requestedStyles, options);
-          if (!resolved.ok) return unknownStyleError(resolved.unknown, options);
-          styles = resolved.styles;
-        }
-        const state = await handle.refine({
+        const hitLimit = readHitLimit(input);
+        const rest = {
           ...(sets === undefined ? {} : { sets }),
-          ...(styles === undefined ? {} : { styles }),
           ...(category.present ? { category: category.value } : {}),
           ...(tier.present ? { tier: tier.value } : {}),
+        };
+
+        let styles = requestedStyles;
+        if (requestedStyles !== undefined && requestedStyles.length > 0) {
+          /* Same hole as search_icons had: a page that has not searched yet
+             has no style facet, and a raw press would light a chip over an
+             empty grid. Here the other refinements ride along with the
+             style-free run, so nothing is done twice. */
+          const resolved = await withResolvedStyles(requestedStyles, handle, () =>
+            handle.refine({ ...rest, styles: [] }),
+          );
+          if (resolved.kind === "error") return resolved.error;
+          if (resolved.kind === "settled") {
+            return reportOutcome(resolved.state, hitLimit, mode);
+          }
+          if (resolved.ranQuery) {
+            return reportOutcome(
+              await handle.refine({ styles: resolved.styles }),
+              hitLimit,
+              mode,
+            );
+          }
+          styles = resolved.styles;
+        }
+
+        const state = await handle.refine({
+          ...rest,
+          ...(styles === undefined ? {} : { styles }),
         });
-        return reportOutcome(state, readHitLimit(input), mode);
+        return reportOutcome(state, hitLimit, mode);
       },
     },
 
