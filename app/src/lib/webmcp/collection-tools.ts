@@ -79,6 +79,9 @@ export interface CollectionDownloadResult {
   format: ExportFormat;
   /** The name the browser saves the file under, e.g. "dashboard-icons.zip". */
   filename: string;
+  /** The tokened download URL the panel's anchor points at. Empty only on
+      the timeout fallback. */
+  url: string;
   /** Present when `ok` is false: the panel's own error sentence. */
   error?: string;
 }
@@ -511,12 +514,29 @@ export function createCollectionTools(handle: CollectionToolHandle): WebMcpTool[
         if (!result.ok) {
           return { error: result.error ?? "The download did not start. Ask the person to try the Download button." };
         }
+        /* Some embedded browsers only honor downloads started by a real
+           human click, and this one was started by a tool call. So besides
+           reporting the handoff, give the agent the direct URL: navigating
+           the browser to it downloads the same file, and the Download button
+           stays ready on the open panel for the person to press. */
+        /* Absolutized in the browser; in a DOM-less test the relative form
+           is already the right answer. */
+        const downloadUrl =
+          result.url && typeof window !== "undefined"
+            ? new URL(result.url, window.location.origin).toString()
+            : result.url;
         return {
           downloading: true,
           filename: result.filename,
           count: result.count,
           format: result.format,
-          message: `The person's browser is downloading ${result.filename} - ${result.count} ${result.count === 1 ? "icon" : "icons"} exported as ${result.format}, with a LICENSES.txt inside. It lands in their downloads folder.`,
+          downloadUrl,
+          message:
+            `The download panel is open on the person's screen and their browser was handed ${result.filename} - ` +
+            `${result.count} ${result.count === 1 ? "icon" : "icons"} exported as ${result.format}, with a LICENSES.txt inside. ` +
+            `Some browsers only start downloads from a human click. If no save dialog appeared, ` +
+            `open ${downloadUrl || "the panel's Download link"} directly - it downloads the same zip - ` +
+            `or tell the person the Download button is ready on the open panel.`,
         };
       },
     },

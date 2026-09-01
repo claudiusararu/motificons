@@ -37,6 +37,12 @@ export interface AutoDownloadResult {
   format: ExportFormat;
   /** The name the browser saves the zip under. */
   filename: string;
+  /** The tokened download URL the anchor points at (origin-relative). Some
+      embedded browsers only honor downloads started by a real human click,
+      so an agent-triggered run may hand this over with nothing saved - the
+      caller passes it on so the agent can navigate to it or hand it to the
+      person. */
+  url: string;
   /** The panel's own error sentence, when the run could not be started. */
   error?: string;
 }
@@ -157,7 +163,7 @@ export default function CollectionDownloadPanel({
     setStatus("building");
     window.setTimeout(() => setStatus("handed-off"), BUILDING_MS);
 
-    return { ok: true, count: items.length, format, filename };
+    return { ok: true, count: items.length, format, filename, url: downloadUrl };
   }
 
   /* The auto-start run, for a WebMCP `download_collection` call. It clicks
@@ -178,6 +184,7 @@ export default function CollectionDownloadPanel({
         count: 0,
         format,
         filename,
+        url: downloadUrl,
         error: "There is nothing in this collection to download.",
       });
       return;

@@ -100,6 +100,7 @@ function fakeHandle(state: CollectionSnapshot = snapshot()) {
         count: current.count,
         format: format ?? current.styles.exportFormat,
         filename: "my-icons.zip",
+        url: "/api/collections/c1/download/my-icons.zip?format=svg&token=test-token",
       };
     },
   };
@@ -375,10 +376,15 @@ describe("createCollectionTools", () => {
       expect(result["filename"]).toBe("my-icons.zip");
       expect(result["count"]).toBe(2);
       expect(result["format"]).toBe("png");
-      /* The agent gets the filename and the count in one sentence it can
-         repeat to the person, and nothing that claims the file has landed. */
-      expect(String(result["message"])).toContain("downloading my-icons.zip");
+      /* The agent gets the filename, the count, and the direct URL - some
+         embedded browsers only start downloads from a human click or from
+         the agent's own download action on a URL, so the URL is the
+         reliable path. Nothing claims the file has landed. */
+      expect(String(result["message"])).toContain("my-icons.zip");
       expect(String(result["message"])).toContain("2 icons");
+      expect(String(result["downloadUrl"])).toContain("/api/collections/c1/download/my-icons.zip");
+      expect(String(result["downloadUrl"])).toContain("token=");
+      expect(String(result["message"])).toContain("If no save dialog appeared");
     });
 
     it("uses the remembered format when none is given", async () => {
@@ -402,6 +408,7 @@ describe("createCollectionTools", () => {
         count: 0,
         format: "svg",
         filename: "",
+        url: "",
         error: "The download panel did not open in time.",
       });
       const result = await run(createCollectionTools(handle), "download_collection", {});

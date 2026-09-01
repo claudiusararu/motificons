@@ -503,6 +503,7 @@ export default function CollectionWorkspace({
               count: latest.current.items.length,
               format: latest.current.styleSettings.exportFormat,
               filename: "",
+              url: "",
               error:
                 "The download panel did not open in time for me to confirm the file was handed to the person's browser.",
             });
