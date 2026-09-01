@@ -103,6 +103,16 @@ export interface SearchSnapshot {
   style: string[];
   license: string[];
   noAttribution: boolean;
+  /**
+   * The style values the STYLE rail is currently offering, most common first -
+   * i.e. the keys of the search response's `style` facet. This is the only
+   * authority on what a style name may be: styles are not a fixed enum, they
+   * are labels each icon set declares ("Outline", "Fill", "Duo", "Path",
+   * "Two-Tone"), so an agent's guess is checked against what this screen can
+   * actually filter by rather than against a list baked in here. Empty when
+   * nothing has been searched yet.
+   */
+  styleOptions: string[];
   outcome: SearchOutcome;
 }
 
@@ -113,6 +123,7 @@ export function toSnapshot(
   query: string,
   selected: Selected,
   outcome: SearchOutcome,
+  styleOptions: string[] = [],
 ): SearchSnapshot {
   return {
     query,
@@ -122,8 +133,44 @@ export function toSnapshot(
     style: selected.style,
     license: selected.license,
     noAttribution: selected.noAttribution,
+    styleOptions,
     outcome,
   };
+}
+
+/** The style facet's values, most common first - the same order the STYLE
+    pills are laid out in the rail, so what an agent is told is available
+    reads in the same order as what the human is looking at. */
+export function toStyleOptions(
+  facets: Record<string, Record<string, number>> | undefined,
+): string[] {
+  return Object.entries(facets?.["style"] ?? {})
+    .sort((a, b) => b[1] - a[1])
+    .map(([value]) => value);
+}
+
+/**
+ * The style names an agent may legitimately name, which is wider than the
+ * style facet on its own.
+ *
+ * Facet counts describe the results AFTER every filter, the style filter
+ * included - so the moment "Outline" is on, every other style vanishes from
+ * the payload and from the rail. A human just un-presses the pill they can
+ * see. An agent asked to switch from outline to fill would instead be told
+ * "Fill" does not exist and stop. So `remembered` (the widest list this
+ * screen offered while no style was selected) and the styles currently in
+ * force are folded in behind what the results have right now.
+ */
+export function mergeStyleOptions(
+  options: string[],
+  remembered: string[],
+  selected: string[],
+): string[] {
+  const merged = [...options];
+  for (const value of [...selected, ...remembered]) {
+    if (!merged.includes(value)) merged.push(value);
+  }
+  return merged;
 }
 
 /**
@@ -134,18 +181,20 @@ export function toSnapshot(
  * render the visitor sees. Fire-and-forget would leave the agent describing a
  * screen that does not exist yet.
  *
- * `sets` and `category` are three-state on the way in, matching what the tool
- * descriptions promise: absent leaves the filter alone, null clears it, a
- * value sets it.
+ * `sets`, `styles` and `category` are three-state on the way in, matching what
+ * the tool descriptions promise: absent leaves the filter alone, null (or an
+ * empty list) clears it, a value sets it.
  */
 export interface SearchToolHandle {
   search(input: {
     query: string;
     sets?: string[];
+    styles?: string[];
     category?: string | null;
   }): Promise<SearchSnapshot>;
   refine(input: {
     sets?: string[];
+    styles?: string[];
     category?: string | null;
     tier?: string | null;
   }): Promise<SearchSnapshot>;
@@ -218,6 +267,64 @@ function readStringList(
   return value.filter((item): item is string => typeof item === "string");
 }
 
+/** Same as `readStringList`, plus the null spelling of "clear it": a list
+    field's three states are absent (leave it alone), null or [] (clear), and
+    a list of values (set). An agent that reaches for null on a list field is
+    being consistent with `category` and `tier`, not making a mistake. */
+function readClearableList(
+  input: Record<string, unknown>,
+  key: string,
+): string[] | undefined {
+  if (key in input && input[key] === null) return [];
+  return readStringList(input, key);
+}
+
+/**
+ * Resolves the style names an agent asked for against the ones the STYLE rail
+ * is actually offering.
+ *
+ * Two jobs, and both matter for a filter that has no fixed vocabulary:
+ *
+ *   - Case. The facet values are the labels icon sets ship ("Outline",
+ *     "Fill", "Duo"), while an agent relaying a human writes "outline". The
+ *     pill press has to carry the rail's exact spelling or it toggles a facet
+ *     value that matches nothing.
+ *   - Honesty. A style the current results do not have is a dead end that
+ *     would silently empty the human's screen, so it comes back as an error
+ *     naming what IS there instead.
+ *
+ * With nothing searched yet there is no facet to check against, so the values
+ * pass through as written rather than being rejected against an empty list.
+ */
+function resolveStyles(
+  requested: string[],
+  options: string[],
+): { ok: true; styles: string[] } | { ok: false; unknown: string[] } {
+  if (options.length === 0) return { ok: true, styles: requested };
+  const byLower = new Map(options.map((option) => [option.toLowerCase(), option]));
+  const styles: string[] = [];
+  const unknown: string[] = [];
+  for (const value of requested) {
+    const match = byLower.get(value.trim().toLowerCase());
+    if (match) styles.push(match);
+    else unknown.push(value);
+  }
+  return unknown.length > 0 ? { ok: false, unknown } : { ok: true, styles };
+}
+
+/** The message an agent gets for a style nobody on this screen can filter by.
+    It names the styles that ARE available, so the next call is a correction
+    rather than another guess. */
+function unknownStyleError(unknown: string[], options: string[]) {
+  return {
+    error:
+      `No style called ${unknown.map((value) => `"${value}"`).join(", ")} in these ` +
+      `results. The styles available right now are: ${options.join(", ")}. ` +
+      "Style names come from the STYLE facet shown on the page and differ by " +
+      "icon set - pass one of these, or leave styles out to keep every style.",
+  };
+}
+
 /**
  * Reads a field whose three states all mean something different:
  * absent = leave it alone, null = clear it, string = set it.
@@ -255,6 +362,7 @@ function reportFilters(state: SearchSnapshot) {
   return {
     query: state.query,
     sets: state.sets,
+    styles: state.style,
     category: state.category,
     tier: state.tier,
   };
@@ -321,8 +429,10 @@ export function createSearchTools(
         "request like 'find a trash icon' or 'show me outline arrows'. Query " +
         "with plain singular English words ('arrow right', 'user', 'calendar'); " +
         "icon names are usually singular and hyphenated. Optionally narrow to " +
-        "specific sets by prefix (e.g. 'tabler', 'lucide') or to one category " +
-        "slug. Anonymous visitors have a daily search allowance that these " +
+        "specific sets by prefix (e.g. 'tabler', 'lucide'), to one or more " +
+        "drawing styles (e.g. 'outline', 'fill') or to one category slug - the " +
+        "same set, style and category pills the human can click in the rail. " +
+        "Anonymous visitors have a daily search allowance that these " +
         "calls share with the human's own searches, so search deliberately " +
         "rather than sweeping; a free account makes search unlimited. Returns " +
         "the total match count, a compact list of hits with a page URL each, " +
@@ -343,6 +453,18 @@ export function createSearchTools(
             description:
               "Optional set prefixes to restrict the search to, e.g. ['tabler', 'lucide']. " +
               "Omit to keep whatever set filter the human already has; pass an empty array to clear it.",
+          },
+          styles: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Optional drawing styles to keep, e.g. ['outline'] for 'outline arrows', or " +
+              "['fill', 'duo']. Common values are outline, fill, duo, path, solid, bold, " +
+              "line, regular, rounded, sharp, thin - but styles are labels each icon set " +
+              "declares, so the real list is the STYLE facet shown on the page (matching " +
+              "ignores case). A style these results do not have comes back as an error " +
+              "naming the ones they do. Omit to keep the human's current style filter; " +
+              "pass an empty array or null to clear it.",
           },
           category: {
             type: "string",
@@ -369,11 +491,23 @@ export function createSearchTools(
         /* Filters the agent did not mention are left exactly as the human set
            them - this is a shared screen, not a fresh private query. The
            `applied` block in the response says what ended up in force. */
-        const sets = readStringList(input, "sets");
+        const sets = readClearableList(input, "sets");
+        const requestedStyles = readClearableList(input, "styles");
         const category = readNullableString(input, "category");
+        let styles = requestedStyles;
+        if (requestedStyles !== undefined && requestedStyles.length > 0) {
+          /* Checked against the screen BEFORE spending a search: a made-up
+             style name would otherwise cost the human an allowance and hand
+             them an empty grid. `snapshot` reads, it does not search. */
+          const options = handle.snapshot().styleOptions;
+          const resolved = resolveStyles(requestedStyles, options);
+          if (!resolved.ok) return unknownStyleError(resolved.unknown, options);
+          styles = resolved.styles;
+        }
         const state = await handle.search({
           query,
           ...(sets === undefined ? {} : { sets }),
+          ...(styles === undefined ? {} : { styles }),
           ...(category.present ? { category: category.value } : {}),
         });
         return reportOutcome(state, readHitLimit(input), mode);
@@ -387,8 +521,9 @@ export function createSearchTools(
         "Narrow or widen the search already on screen without retyping it - " +
         "this flips the same facet pills in the left-hand rail that the human " +
         "clicks, so the change is visible to them. Use it after search_icons " +
-        "when the results are close but too broad ('only Tabler ones', 'just " +
-        "the arrows category', 'only icons I can restyle'). Each field is " +
+        "when the results are close but too broad ('only Tabler ones', 'the " +
+        "outline ones', 'just the arrows category', 'only icons I can " +
+        "restyle'). It filters by set, style, category and restyling tier. Each field is " +
         "three-state: leave it out to keep the current filter, pass null to " +
         "clear it, pass a value to set it. Returns the same shape as " +
         "search_icons. Refining re-runs the search, so it also draws on the " +
@@ -402,6 +537,16 @@ export function createSearchTools(
             items: { type: "string" },
             description:
               "Set prefixes to filter to, e.g. ['tabler']. An empty array clears the set filter.",
+          },
+          styles: {
+            type: ["array", "null"],
+            items: { type: "string" },
+            description:
+              "Drawing styles to filter to, e.g. ['outline'] or ['fill', 'duo']. Values come " +
+              "from the STYLE facet shown on the page (common ones: outline, fill, duo, path, " +
+              "solid, bold, line, regular, rounded, sharp, thin); matching ignores case, and a " +
+              "style these results do not have comes back as an error naming the ones they do. " +
+              "null or an empty array clears the style filter.",
           },
           category: {
             type: ["string", "null"],
@@ -422,17 +567,31 @@ export function createSearchTools(
         },
       },
       async execute(input) {
-        const sets = readStringList(input, "sets");
+        const sets = readClearableList(input, "sets");
+        const requestedStyles = readClearableList(input, "styles");
         const category = readNullableString(input, "category");
         const tier = readNullableString(input, "tier");
-        if (sets === undefined && !category.present && !tier.present) {
+        if (
+          sets === undefined &&
+          requestedStyles === undefined &&
+          !category.present &&
+          !tier.present
+        ) {
           return {
             error:
-              "refine_search needs at least one of sets, category or tier. Use search_icons to change the query itself.",
+              "refine_search needs at least one of sets, styles, category or tier. Use search_icons to change the query itself.",
           };
+        }
+        let styles = requestedStyles;
+        if (requestedStyles !== undefined && requestedStyles.length > 0) {
+          const options = handle.snapshot().styleOptions;
+          const resolved = resolveStyles(requestedStyles, options);
+          if (!resolved.ok) return unknownStyleError(resolved.unknown, options);
+          styles = resolved.styles;
         }
         const state = await handle.refine({
           ...(sets === undefined ? {} : { sets }),
+          ...(styles === undefined ? {} : { styles }),
           ...(category.present ? { category: category.value } : {}),
           ...(tier.present ? { tier: tier.value } : {}),
         });

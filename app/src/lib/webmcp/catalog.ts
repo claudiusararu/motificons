@@ -41,7 +41,7 @@ export const WEBMCP_SURFACES: WebMcpSurface[] = [
       },
       {
         name: "refine_search",
-        does: "Flips the same filters you would click - set, style, license, no-attribution.",
+        does: "Flips the same filters you would click - set, style, category, restyling tier.",
       },
       { name: "open_icon", does: "Opens one icon's own page in the tab." },
       {

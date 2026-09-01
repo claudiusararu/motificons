@@ -62,6 +62,41 @@ describe("planFacetChanges - sets", () => {
   });
 });
 
+describe("planFacetChanges - styles", () => {
+  it("presses the STYLE pill an agent asked for", () => {
+    expect(planFacetChanges(EMPTY_SELECTED, { styles: ["Outline"] })).toEqual([
+      { kind: "toggle", key: "style", value: "Outline" },
+    ]);
+  });
+
+  it("plans nothing when the style filter already matches", () => {
+    const current = selected({ style: ["Outline"] });
+    expect(planFacetChanges(current, { styles: ["Outline"] })).toEqual([]);
+  });
+
+  it("swaps one style for another - removals first, then additions", () => {
+    const current = selected({ style: ["Outline", "Fill"] });
+    expect(planFacetChanges(current, { styles: ["Fill", "Duo"] })).toEqual([
+      { kind: "toggle", key: "style", value: "Outline" },
+      { kind: "toggle", key: "style", value: "Duo" },
+    ]);
+  });
+
+  it("clears the style filter on an empty array", () => {
+    const current = selected({ style: ["Outline"] });
+    expect(planFacetChanges(current, { styles: [] })).toEqual([
+      { kind: "toggle", key: "style", value: "Outline" },
+    ]);
+  });
+
+  it("leaves an active style alone when styles are not named", () => {
+    const current = selected({ style: ["Outline"] });
+    expect(planFacetChanges(current, { sets: ["tabler"] })).toEqual([
+      { kind: "toggle", key: "prefix", value: "tabler" },
+    ]);
+  });
+});
+
 describe("planFacetChanges - category", () => {
   it("selects a category when none is active", () => {
     expect(planFacetChanges(EMPTY_SELECTED, { category: "arrows" })).toEqual([
@@ -111,13 +146,25 @@ describe("planFacetChanges - tier", () => {
 });
 
 describe("planFacetChanges - several facets at once", () => {
-  it("plans sets, then tier, then category", () => {
-    const current = selected({ prefix: ["mdi"], tier: ["T4"], category: "weather" });
+  it("plans sets, then styles, then tier, then category", () => {
+    const current = selected({
+      prefix: ["mdi"],
+      style: ["Fill"],
+      tier: ["T4"],
+      category: "weather",
+    });
     expect(
-      planFacetChanges(current, { sets: ["tabler"], tier: "T1", category: "arrows" }),
+      planFacetChanges(current, {
+        sets: ["tabler"],
+        styles: ["Outline"],
+        tier: "T1",
+        category: "arrows",
+      }),
     ).toEqual([
       { kind: "toggle", key: "prefix", value: "mdi" },
       { kind: "toggle", key: "prefix", value: "tabler" },
+      { kind: "toggle", key: "style", value: "Fill" },
+      { kind: "toggle", key: "style", value: "Outline" },
       { kind: "toggle", key: "tier", value: "T4" },
       { kind: "toggle", key: "tier", value: "T1" },
       { kind: "category", slug: "arrows" },

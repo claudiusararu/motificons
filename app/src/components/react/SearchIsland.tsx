@@ -36,7 +36,9 @@ import {
 import { registerWebMcpTools } from "../../lib/webmcp/bridge";
 import {
   createSearchTools,
+  mergeStyleOptions,
   toSnapshot,
+  toStyleOptions,
   toToolHit,
   type SearchOutcome,
   type SearchSnapshot,
@@ -243,16 +245,45 @@ export default function SearchIsland({
      the request - there is no second, agent-only search path, which is what
      keeps the daily meter honest. */
   const searchWaiters = useRef<Array<(state: SearchSnapshot) => void>>([]);
+  /* The widest STYLE list this screen has offered while no style pill was
+     pressed. Facet counts describe the filtered results, so with a style on,
+     the payload names that one style and nothing else - see
+     `mergeStyleOptions`, which folds this back in so an agent can still be
+     told what it may switch to. */
+  const styleVocabulary = useRef<string[]>([]);
+  /* The style names an agent may use, given a response and the filter that
+     produced it. Called from both the settle path (the response in hand) and
+     the read path (the response behind the grid). */
+  const readStyleOptions = useCallback(
+    (
+      facets: Record<string, Record<string, number>> | undefined,
+      styleFilter: string[],
+    ) => {
+      const options = toStyleOptions(facets);
+      if (styleFilter.length === 0 && options.length > 0) {
+        styleVocabulary.current = options;
+      }
+      return mergeStyleOptions(options, styleVocabulary.current, styleFilter);
+    },
+    [],
+  );
   /* Settled with the query and facets that PRODUCED this outcome (the fetch
      effect's own closure), not with whatever the component has re-rendered to
      since - so the snapshot an agent receives always describes the screenful
      it is being handed. */
   const settleSearch = useCallback(
-    (outcome: SearchOutcome, appliedQuery: string, appliedSelected: Selected) => {
+    (
+      outcome: SearchOutcome,
+      appliedQuery: string,
+      appliedSelected: Selected,
+      /* The STYLE values this very response offered, so an agent is told what
+         it can filter by from the same payload it is being handed. */
+      appliedStyleOptions: string[] = [],
+    ) => {
       const waiters = searchWaiters.current;
       if (waiters.length === 0) return;
       searchWaiters.current = [];
-      const state = toSnapshot(appliedQuery, appliedSelected, outcome);
+      const state = toSnapshot(appliedQuery, appliedSelected, outcome, appliedStyleOptions);
       for (const resolve of waiters) resolve(state);
     },
     [],
@@ -487,6 +518,7 @@ export default function SearchIsland({
             },
             query,
             selected,
+            readStyleOptions(payload.facets, selected.style),
           );
         }
       })
@@ -508,7 +540,7 @@ export default function SearchIsland({
     /* `query` and `selected` are read only to describe the request that was
        just made; they change in lockstep with `buildParams`, so listing them
        adds no extra run of this effect. */
-  }, [mode, buildParams, settleSearch, query, selected]);
+  }, [mode, buildParams, settleSearch, readStyleOptions, query, selected]);
 
   const hits = useMemo(
     () => [...(result?.hits ?? []), ...extraHits],
@@ -693,7 +725,15 @@ export default function SearchIsland({
 
     const readSnapshot = (): SearchSnapshot => {
       const state = latestState.current;
-      return toSnapshot(state.query, state.selected, readOutcome());
+      return toSnapshot(
+        state.query,
+        state.selected,
+        readOutcome(),
+        /* Off the response behind the grid - the STYLE pills the human can
+           see, plus the ones they could see before a style narrowed the
+           facet. */
+        readStyleOptions(state.result?.facets, state.selected.style),
+      );
     };
 
     /* Resolves when the fetch effect above next settles. The timeout is a
@@ -704,10 +744,15 @@ export default function SearchIsland({
         searchWaiters.current.push(resolve);
         window.setTimeout(() => {
           resolve(
-            toSnapshot(latestState.current.query, latestState.current.selected, {
-              status: "error",
-              message: "The search did not finish in time.",
-            }),
+            toSnapshot(
+              latestState.current.query,
+              latestState.current.selected,
+              { status: "error", message: "The search did not finish in time." },
+              readStyleOptions(
+                latestState.current.result?.facets,
+                latestState.current.selected.style,
+              ),
+            ),
           );
         }, WEBMCP_TIMEOUT_MS);
       });
@@ -742,16 +787,17 @@ export default function SearchIsland({
     };
 
     return {
-      search: ({ query: nextQuery, sets, category }) =>
+      search: ({ query: nextQuery, sets, styles, category }) =>
         apply(nextQuery.trim(), {
           ...(sets === undefined ? {} : { sets }),
+          ...(styles === undefined ? {} : { styles }),
           ...(category === undefined ? {} : { category }),
         }),
       refine: (request) => apply(null, request),
       snapshot: readSnapshot,
       navigate: (path) => window.location.assign(path),
     };
-  }, [toggle, selectCategory]);
+  }, [toggle, selectCategory, readStyleOptions]);
 
   /* A boolean, not `collectionTarget` itself: the collection page rebuilds
      that object every render, and the effect below must not tear the tools

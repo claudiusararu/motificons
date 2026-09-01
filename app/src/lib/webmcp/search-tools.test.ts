@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   createSearchTools,
+  mergeStyleOptions,
   toSnapshot,
+  toStyleOptions,
   toToolHit,
   type SearchOutcome,
   type SearchSnapshot,
@@ -44,7 +46,12 @@ const snapshot = (
   outcome: SearchOutcome,
   query = "arrow",
   selected: Partial<Selected> = {},
-): SearchSnapshot => toSnapshot(query, { ...EMPTY_SELECTED, ...selected }, outcome);
+  /* The STYLE facet the screen is offering. Styles are labels icon sets
+     declare, not a fixed enum, so the tools check an agent's style against
+     these rather than against anything hard-coded. */
+  styleOptions: string[] = [],
+): SearchSnapshot =>
+  toSnapshot(query, { ...EMPTY_SELECTED, ...selected }, outcome, styleOptions);
 
 const results = (
   hits: SearchHit[],
@@ -206,6 +213,7 @@ describe("search_icons", () => {
     expect(result["applied"]).toEqual({
       query: "arrow",
       sets: ["tabler"],
+      styles: [],
       category: "arrows",
       tier: ["T1"],
     });
@@ -327,6 +335,182 @@ describe("refine_search", () => {
     const result = await run(fake.tools(), "refine_search", { tier: "T1" });
     expect(result["total"]).toBe(0);
     expect(String(result["note"])).toContain("search_icons");
+  });
+});
+
+/**
+ * The style facet, which is how people actually ask for icons ("outline
+ * arrows"). Three things have to hold, and none of them are obvious:
+ *
+ *   - the rail's own spelling wins. Facet values are the labels icon sets
+ *     ship ("Outline", "Fill", "Duo"); an agent writes what the human said.
+ *     A press that carries "outline" toggles nothing, so the tool has to
+ *     resolve the case before pressing;
+ *   - a style these results do not have is an error naming the ones they do,
+ *     not an empty grid the human has to make sense of;
+ *   - with nothing searched yet there is no facet to check against, so the
+ *     value goes through as written instead of being rejected by an empty list.
+ */
+const STYLE_FACET = ["Outline", "Fill", "Duo", "Path"];
+
+describe("style filtering", () => {
+  it("passes styles through to the search in the facet rail's own spelling", async () => {
+    const fake = fakeHandle(snapshot(results([], null), "arrow", {}, STYLE_FACET));
+    await run(fake.tools(), "search_icons", { query: "arrow", styles: ["outline"] });
+    expect(fake.calls.at(-1)).toEqual({
+      method: "search",
+      input: { query: "arrow", styles: ["Outline"] },
+    });
+  });
+
+  it("accepts a bare string, and several styles at once", async () => {
+    const fake = fakeHandle(snapshot(results([], null), "arrow", {}, STYLE_FACET));
+    await run(fake.tools(), "search_icons", { query: "arrow", styles: "FILL" });
+    expect((fake.calls.at(-1)!.input as { styles: string[] }).styles).toEqual(["Fill"]);
+
+    await run(fake.tools(), "refine_search", { styles: ["fill", "duo"] });
+    expect((fake.calls.at(-1)!.input as { styles: string[] }).styles).toEqual([
+      "Fill",
+      "Duo",
+    ]);
+  });
+
+  it("clears the style filter on null and on an empty list", async () => {
+    const fake = fakeHandle(
+      snapshot(results([], null), "arrow", { style: ["Outline"] }, STYLE_FACET),
+    );
+    await run(fake.tools(), "refine_search", { styles: null });
+    expect(fake.calls.at(-1)).toEqual({ method: "refine", input: { styles: [] } });
+
+    await run(fake.tools(), "refine_search", { styles: [] });
+    expect(fake.calls.at(-1)).toEqual({ method: "refine", input: { styles: [] } });
+  });
+
+  it("leaves the human's style filter alone when styles are not mentioned", async () => {
+    const fake = fakeHandle(
+      snapshot(results([], null), "arrow", { style: ["Outline"] }, STYLE_FACET),
+    );
+    await run(fake.tools(), "search_icons", { query: "arrow", sets: ["tabler"] });
+    expect(fake.calls.at(-1)!.input).toEqual({ query: "arrow", sets: ["tabler"] });
+  });
+
+  it("refuses an unknown style, naming the ones these results have", async () => {
+    const fake = fakeHandle(snapshot(results([], null), "arrow", {}, STYLE_FACET));
+    const result = await run(fake.tools(), "search_icons", {
+      query: "arrow",
+      styles: ["squiggly"],
+    });
+    const message = String(result["error"]);
+    expect(message).toContain("squiggly");
+    expect(message).toContain("Outline, Fill, Duo, Path");
+    /* Read the screen, then stop: no search ran, so the human's daily
+       allowance paid nothing for the agent's guess. */
+    expect(fake.calls.map((call) => call.method)).toEqual(["snapshot"]);
+  });
+
+  it("refuses an unknown style on refine_search too", async () => {
+    const fake = fakeHandle(snapshot(results([], null), "arrow", {}, STYLE_FACET));
+    const result = await run(fake.tools(), "refine_search", { styles: ["Outline", "wobble"] });
+    expect(String(result["error"])).toContain("wobble");
+    expect(fake.calls.map((call) => call.method)).toEqual(["snapshot"]);
+  });
+
+  it("switches to a style the narrowed facet no longer lists", async () => {
+    /* The screen is filtered to Outline, so its facet offers Outline alone -
+       the island widens that with what it saw before (mergeStyleOptions), and
+       "make them filled" goes through instead of being refused. */
+    const fake = fakeHandle(
+      snapshot(results([], null), "arrow", { style: ["Outline"] }, [
+        "Outline",
+        "Fill",
+        "Duo",
+      ]),
+    );
+    await run(fake.tools(), "refine_search", { styles: ["fill"] });
+    expect(fake.calls.at(-1)).toEqual({ method: "refine", input: { styles: ["Fill"] } });
+  });
+
+  it("takes a style on faith when nothing has been searched yet", async () => {
+    const fake = fakeHandle(snapshot({ status: "idle" }, ""));
+    await run(fake.tools(), "search_icons", { query: "arrow", styles: ["outline"] });
+    expect(fake.calls.at(-1)).toEqual({
+      method: "search",
+      input: { query: "arrow", styles: ["outline"] },
+    });
+  });
+
+  it("counts styles as a refinement of their own", async () => {
+    const fake = fakeHandle(snapshot(results([], null), "arrow", {}, STYLE_FACET));
+    const result = await run(fake.tools(), "refine_search", { styles: ["Duo"] });
+    expect(result["error"]).toBeUndefined();
+  });
+
+  it("echoes the styles in force next to the other applied filters", async () => {
+    const fake = fakeHandle(
+      snapshot(
+        results([hit("arrow-right")], null),
+        "arrow",
+        { style: ["Outline"], prefix: ["tabler"], category: "arrows" },
+        STYLE_FACET,
+      ),
+    );
+    const result = await run(fake.tools(), "search_icons", { query: "arrow" });
+    expect(result["applied"]).toEqual({
+      query: "arrow",
+      sets: ["tabler"],
+      styles: ["Outline"],
+      category: "arrows",
+      tier: [],
+    });
+  });
+
+  it("names the style facet in both tools' schemas", () => {
+    const tools = fakeHandle(snapshot({ status: "idle" })).tools();
+    for (const name of ["search_icons", "refine_search"]) {
+      const properties = (
+        toolNamed(tools, name).inputSchema as {
+          properties: Record<string, { description: string }>;
+        }
+      ).properties;
+      expect(properties["styles"]!.description).toContain("outline");
+      expect(properties["styles"]!.description).toContain("STYLE facet");
+    }
+  });
+});
+
+describe("toStyleOptions", () => {
+  it("lists the style facet most common first, like the rail does", () => {
+    expect(toStyleOptions({ style: { Duo: 21, Outline: 25, Path: 19 } })).toEqual([
+      "Outline",
+      "Duo",
+      "Path",
+    ]);
+    expect(toStyleOptions(undefined)).toEqual([]);
+    expect(toStyleOptions({ prefix: { tabler: 4 } })).toEqual([]);
+  });
+});
+
+/**
+ * Facet counts describe the results after filtering, so one style pill on
+ * means every other style is missing from the payload - the rail collapses to
+ * the single pill the human can un-press. An agent has no pill to look at, so
+ * "switch these to filled" must not be answered with "there is no Fill".
+ */
+describe("mergeStyleOptions", () => {
+  it("keeps what the results have now first, then what they had before", () => {
+    expect(mergeStyleOptions(["Outline"], ["Outline", "Fill", "Duo"], ["Outline"])).toEqual([
+      "Outline",
+      "Fill",
+      "Duo",
+    ]);
+  });
+
+  it("never repeats a style, whichever list it came from", () => {
+    expect(mergeStyleOptions(["Fill"], ["Fill"], ["Fill"])).toEqual(["Fill"]);
+  });
+
+  it("still names an active style the current results have lost", () => {
+    expect(mergeStyleOptions([], [], ["Two-Tone"])).toEqual(["Two-Tone"]);
   });
 });
 

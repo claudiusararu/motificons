@@ -28,13 +28,19 @@ export type FacetOperation =
   | { kind: "toggle"; key: FacetKey; value: string }
   | { kind: "category"; slug: string };
 
-/** The subset of filters the /search tools can touch. Style, license and the
+/** The subset of filters the /search tools can touch. License and the
     no-attribution switch stay human-only for now: they are refinements a
     person makes while looking at the rail, and every extra knob is another
-    thing an agent can get subtly wrong on someone else's screen. */
+    thing an agent can get subtly wrong on someone else's screen. Style is
+    here because "outline arrows" is how people ask for icons - the tools
+    resolve the name against the rail's own STYLE values before planning a
+    press, so a press always names a pill that exists (see search-tools.ts). */
 export interface FacetRequest {
   /** Set prefixes. `[]` clears the set filter. */
   sets?: string[];
+  /** Style labels, exactly as the STYLE facet spells them ("Outline",
+      "Fill"). `[]` clears the style filter. */
+  styles?: string[];
   /** One category slug, or null to clear. */
   category?: string | null;
   /** One capability tier ("T1".."T4"), or null to clear. */
@@ -75,6 +81,10 @@ export function planFacetChanges(
 
   if (request.sets !== undefined) {
     operations.push(...toggleListTo("prefix", current.prefix, request.sets));
+  }
+
+  if (request.styles !== undefined) {
+    operations.push(...toggleListTo("style", current.style, request.styles));
   }
 
   if (request.tier !== undefined) {
