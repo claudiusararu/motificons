@@ -56,7 +56,9 @@ export interface AutoDownloadResult {
  * has no access to the page's blob store, so every such download registered
  * and then stopped. Keeping the blob alive longer did not help, because the
  * manager was never able to read it at all. A URL on the origin is something
- * it already knows how to fetch.
+ * it already knows how to fetch - as long as the URL does not need a cookie
+ * that manager has never had, which is why the href carries a signed
+ * `token` as well (lib/download-token.ts).
  *
  * Export format lives here, not in CollectionStylePanel.tsx - it is
  * genuinely a download-time choice, not a look the icons wear on the page.
@@ -69,6 +71,7 @@ export interface AutoDownloadResult {
 export default function CollectionDownloadPanel({
   collectionId,
   collectionName,
+  downloadToken,
   items,
   styleSettings,
   savedEdits,
@@ -78,6 +81,19 @@ export default function CollectionDownloadPanel({
 }: {
   collectionId: string;
   collectionName: string;
+  /** The page's signed download token, put on the anchor's href so the URL
+      can authenticate itself.
+
+      It is minted once, at page render, and is good for 15 minutes. That is
+      long enough for the ordinary open-panel-pick-click sequence, and a page
+      left sitting open past it is a non-event for a normal browser: the
+      anchor is same-origin, the session cookie rides along, and the server
+      takes the session path without ever looking at the token. The only
+      caller a stale token can actually strand is the cookieless one - an
+      embedded browser's external download manager - and there a reload of
+      the page mints a fresh one. Not worth a timer, a refresh endpoint or a
+      countdown in the UI for that. */
+  downloadToken: string;
   items: CollectionIconItem[];
   styleSettings: CollectionStyleSettings;
   /** The collection's saved color/stroke - the same look the grid and the
@@ -105,6 +121,7 @@ export default function CollectionDownloadPanel({
     collectionName,
     format,
     resolveExportSize(format, pngSize, styleSettings.size),
+    downloadToken,
   );
 
   const styleSummary = summarizeCollectionStyles({

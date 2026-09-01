@@ -11,6 +11,7 @@ import { getPersonalWorkspace } from "../../lib/auth/workspace";
 import { getCollection } from "../../lib/workspace/collections";
 import { loadCollectionIcons } from "../../lib/workspace/collection-icons";
 import { getCollectionStyleSettings } from "../../lib/workspace/collection-style";
+import { mintCollectionDownloadToken } from "../../lib/download-token";
 import { loadCategories, loadSetList } from "../../lib/data";
 
 /*
@@ -51,6 +52,14 @@ Astro.response.headers.set("Cache-Control", "private, no-store");
    on this page and the files in the download are always the same set of
    icons; see lib/workspace/collection-icons.ts. */
 const iconItems = await loadCollectionIcons(database, collection.id);
+
+/* The download URL's own proof of ownership, minted HERE because here is
+   where ownership was actually established: this render already required a
+   session and already scoped the collection to this visitor's workspace.
+   The zip is fetched by whatever the browser hands the click to, and in an
+   embedded browser that is an external download manager with no cookies -
+   so the URL has to carry its own credentials. See lib/download-token.ts. */
+const downloadToken = await mintCollectionDownloadToken(collection.id, workspace.id);
 
 const rawStyleSettings = await getCollectionStyleSettings(database, workspace.id, collection.id);
 const styleSettings = {
@@ -126,6 +135,7 @@ const categoryLabels = categories.map((category) => ({
         client:load
         collectionId={collection.id}
         collectionName={collection.name}
+        downloadToken={downloadToken}
         initialItems={iconItems}
         initialStyleSettings={styleSettings}
         setLabels={setLabels}

@@ -78,6 +78,10 @@ export function slugifyFilename(name: string): string {
  * `my-icons.zip`. That is the whole reason this is a URL at all: an embedded
  * browser (the ChatGPT desktop app's) hands downloads to an external manager
  * that cannot read a blob the page built, and stops them dead.
+ *
+ * That same manager is also why the URL carries a `token`: it fetches this
+ * string as a separate program, with none of the page's cookies, so the URL
+ * has to authenticate itself. See lib/download-token.ts.
  */
 export function buildCollectionDownloadUrl(
   collectionId: string,
@@ -85,9 +89,13 @@ export function buildCollectionDownloadUrl(
   format: ExportFormat,
   /** Omit to let the server apply the collection's own remembered size. */
   size?: number,
+  /** The page's short-lived signed token for this collection. Omit and the
+      URL works only for a request that carries the session cookie. */
+  token?: string,
 ): string {
   const params = new URLSearchParams({ format });
   if (size !== undefined) params.set("size", String(size));
+  if (token) params.set("token", token);
   return `/api/collections/${collectionId}/download/${slugifyFilename(collectionName)}.zip?${params}`;
 }
 

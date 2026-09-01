@@ -135,6 +135,7 @@ function toStyleReport(settings: CollectionStyleSettings): CollectionStyleReport
 export default function CollectionWorkspace({
   collectionId,
   collectionName,
+  downloadToken,
   initialItems,
   initialStyleSettings,
   setLabels,
@@ -148,6 +149,11 @@ export default function CollectionWorkspace({
       same session without a reload will not be reflected here, same
       already-accepted gap as every other cross-island value on this page. */
   collectionName: string;
+  /** The signed, 15-minute proof that the zip URL carries so a cookieless
+      download manager can fetch it. Minted by this page's SSR pass, which
+      is where the session and the ownership check actually happened - see
+      lib/download-token.ts. Forwarded untouched to the download panel. */
+  downloadToken: string;
   initialItems: CollectionIconItem[];
   initialStyleSettings: CollectionStyleSettings;
   setLabels: SetLabel[];
@@ -626,6 +632,7 @@ export default function CollectionWorkspace({
         <CollectionDownloadPanel
           collectionId={collectionId}
           collectionName={collectionName}
+          downloadToken={downloadToken}
           items={items}
           styleSettings={styleSettings}
           savedEdits={edits}

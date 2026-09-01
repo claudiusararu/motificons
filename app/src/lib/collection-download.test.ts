@@ -76,6 +76,18 @@ describe("buildCollectionDownloadUrl", () => {
       "/api/collections/col_1/download/nav.zip?format=svg",
     );
   });
+
+  it("carries the signed token, so the URL works for a fetcher that has no cookies", () => {
+    expect(buildCollectionDownloadUrl("col_1", "Nav", "svg", undefined, "abc.def")).toBe(
+      "/api/collections/col_1/download/nav.zip?format=svg&token=abc.def",
+    );
+  });
+
+  it("leaves the token out when there is none, rather than sending an empty one", () => {
+    expect(buildCollectionDownloadUrl("col_1", "Nav", "svg", undefined, "")).toBe(
+      "/api/collections/col_1/download/nav.zip?format=svg",
+    );
+  });
 });
 
 describe("summarizeCollectionStyles", () => {
