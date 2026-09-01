@@ -5,7 +5,7 @@ export const prerender = false;
 /* Packaged Mac app object in the ICONS R2 bucket. Packaging bumps this
    version string (and re-uploads the object under the new key) each time a
    new build ships - nothing else in this route needs to change. */
-const DMG_VERSION = "0.1.0";
+const DMG_VERSION = "0.1.1";
 const DMG_KEY = `desktop/Motificons-${DMG_VERSION}.dmg`;
 
 /** The narrow slice of the R2 binding this route touches, typed locally the
