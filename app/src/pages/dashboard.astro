@@ -12,6 +12,7 @@ import { getPersonalWorkspace } from "../lib/auth/workspace";
 import { listCollections } from "../lib/workspace/collections";
 import { countIconsInCollection } from "../lib/workspace/collection-items";
 import { getActiveApiKey } from "../lib/workspace/api-keys";
+import { WEBMCP_TOOL_COUNT } from "../lib/webmcp/catalog";
 
 /* SSR, session-gated, per-visitor: needs Astro.locals.user (populated by
    src/middleware.ts) before it can render anything, and the response is
@@ -79,6 +80,17 @@ const STEPS: { text: string; href?: string }[] = [
     text: "Open the collection to style and export its icons",
     href: firstCollection ? `/collections/${firstCollection.id}` : undefined,
   },
+];
+
+/* Example prompts for the browser-agent section. Each one is a whole job, not
+   a click: the point is that you say what you want and watch it happen on the
+   page you have open. One per surface the tools live on - dashboard
+   (create_collection), a collection (set_collection_styles), search plus
+   collection (search_icons -> add_icon_to_collection). */
+const AGENT_PROMPTS = [
+  "Create a collection called Settings screen and fill it with six matching outline icons.",
+  "Open my collection and restyle everything to match the bell icon.",
+  "Find me four arrow icons that restyle fully, and add them to a collection.",
 ];
 ---
 
@@ -155,6 +167,43 @@ const STEPS: { text: string; href?: string }[] = [
             emptyLink={{ text: "Browse the library and press Save on any icon.", href: "/search" }}
             detailHrefBase="/collections"
           />
+        </section>
+      </div>
+
+      {/* WebMCP, right under Collections on purpose: the prompts below are
+          mostly about collections, so the thing they act on is still on
+          screen. Server-rendered, no island - it is three sentences and a
+          link. The tool count comes from the catalog constant, never a typed
+          number (project rule 8). */}
+      <div class="mt-12">
+        <section>
+          <h2 class="text-h3 font-semibold">Your browser's AI can use this site</h2>
+          <p class="mt-2 text-body text-ink-muted">
+            The AI agent in your browser can work Motificons with you -
+            searching, restyling, filling collections - while you watch and can
+            step in. There are {WEBMCP_TOOL_COUNT} things it can do here, and
+            every one of them is something you can do yourself.
+          </p>
+          <Card class="mt-4">
+            <h3 class="text-body font-semibold">Things to ask it</h3>
+            <ul class="mt-3 flex flex-col gap-2">
+              {
+                AGENT_PROMPTS.map((prompt) => (
+                  <li class="rounded-control border-2 border-ink bg-canvas px-4 py-3 text-body text-ink">
+                    &ldquo;{prompt}&rdquo;
+                  </li>
+                ))
+              }
+            </ul>
+            <p class="mt-4 text-meta text-ink-muted">
+              This works today in Chrome, where you switch on one experimental
+              setting first, and in the ChatGPT desktop app's browser, where
+              there is nothing to switch on.{" "}
+              <a href="/agents" class="prose-link font-semibold">
+                See how to switch it on
+              </a>
+            </p>
+          </Card>
         </section>
       </div>
 
