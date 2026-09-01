@@ -42,10 +42,13 @@ const SIGN_IN_REQUIRED_ERROR = "Sign in with your free account to use collection
  * How many icons one zip will build. There is no cap on the number of icons
  * in a collection (only on the number of collections), so without this a
  * single request could ask a Worker to rasterize thousands of PNGs against
- * its CPU limit and answer with nothing. Measured: 50 icons is ~0.6s and
- * ~250KB for SVG, ~4s and ~1.2MB for 512px PNG - the heaviest format - so
- * this ceiling leaves the whole request an order of magnitude inside the
- * Worker's limits.
+ * its CPU limit and answer with nothing.
+ *
+ * Measured end to end on a 50-icon collection: 52ms and 17KB as SVG, 579ms
+ * and 265KB as 512px PNG - the heaviest format by far, since every icon is
+ * rasterized. Six times that is a few seconds and under 2MB, which leaves
+ * the whole request well inside a Worker's CPU and memory limits with room
+ * to spare, and keeps the zip small enough to buffer rather than stream.
  */
 const MAX_ZIP_ICONS = 300;
 
