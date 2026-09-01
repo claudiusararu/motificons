@@ -1,53 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCollectionDownloadUrl,
   buildLicensesText,
   dedupeFilename,
-  defaultExtensionFor,
-  fallbackFilename,
-  parseContentDispositionFilename,
   resolveExportSize,
   slugifyFilename,
   summarizeCollectionStyles,
   type CollectionIconLicense,
 } from "./collection-download";
-
-describe("defaultExtensionFor / fallbackFilename", () => {
-  it("maps every format to the extension the export route actually uses", () => {
-    expect(defaultExtensionFor("svg")).toBe("svg");
-    expect(defaultExtensionFor("png")).toBe("png");
-    expect(defaultExtensionFor("jsx")).toBe("jsx");
-    expect(defaultExtensionFor("tsx")).toBe("tsx");
-    expect(defaultExtensionFor("vue")).toBe("vue");
-    expect(defaultExtensionFor("svelte")).toBe("svelte");
-    expect(defaultExtensionFor("swiftui")).toBe("swift");
-    expect(defaultExtensionFor("catalog")).toBe("imageset.zip");
-    expect(defaultExtensionFor("datauri")).toBe("txt");
-  });
-
-  it("builds the same prefix-name stem the server uses", () => {
-    expect(fallbackFilename("lucide", "star", "svg")).toBe("lucide-star.svg");
-    expect(fallbackFilename("lucide", "star", "catalog")).toBe("lucide-star.imageset.zip");
-  });
-});
-
-describe("parseContentDispositionFilename", () => {
-  it("reads a quoted filename", () => {
-    expect(parseContentDispositionFilename('attachment; filename="lucide-star.svg"')).toBe(
-      "lucide-star.svg",
-    );
-  });
-
-  it("reads an unquoted filename", () => {
-    expect(parseContentDispositionFilename("attachment; filename=lucide-star.svg")).toBe(
-      "lucide-star.svg",
-    );
-  });
-
-  it("returns null for a missing or unreadable header", () => {
-    expect(parseContentDispositionFilename(null)).toBeNull();
-    expect(parseContentDispositionFilename("attachment")).toBeNull();
-  });
-});
 
 describe("dedupeFilename", () => {
   it("returns the name unchanged when it is not taken", () => {
@@ -92,6 +52,29 @@ describe("slugifyFilename", () => {
   it("never returns empty", () => {
     expect(slugifyFilename("!!!")).toBe("collection");
     expect(slugifyFilename("")).toBe("collection");
+  });
+});
+
+describe("buildCollectionDownloadUrl", () => {
+  it("ends in the collection's own slug, so a download manager that names from the URL still gets it right", () => {
+    expect(buildCollectionDownloadUrl("col_1", "My UI Icons", "svg")).toBe(
+      "/api/collections/col_1/download/my-ui-icons.zip?format=svg",
+    );
+  });
+
+  it("carries the format override the panel picked", () => {
+    expect(buildCollectionDownloadUrl("col_1", "Nav", "tsx")).toBe(
+      "/api/collections/col_1/download/nav.zip?format=tsx",
+    );
+  });
+
+  it("sends a size only when there is one to send", () => {
+    expect(buildCollectionDownloadUrl("col_1", "Nav", "png", 256)).toBe(
+      "/api/collections/col_1/download/nav.zip?format=png&size=256",
+    );
+    expect(buildCollectionDownloadUrl("col_1", "Nav", "svg", undefined)).toBe(
+      "/api/collections/col_1/download/nav.zip?format=svg",
+    );
   });
 });
 

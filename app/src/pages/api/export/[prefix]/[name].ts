@@ -1,24 +1,11 @@
 import type { APIRoute } from "astro";
 import { getIcon, getSet } from "../../../../lib/data";
-import type { IconEdits } from "../../../../lib/transforms";
-import {
-  buildSvg,
-  capabilitiesFor,
-  toAssetCatalog,
-  toBase64DataUri,
-  toJsxComponent,
-  toPng,
-  toSvelteComponent,
-  toVueComponent,
-  toSwiftUi,
-} from "../../../../lib/transforms";
+import { exportIconFile } from "../../../../lib/export-file";
+import { EXPORT_FORMATS, type ExportFormat, type IconEdits } from "../../../../lib/transforms";
 
 export const prerender = false;
 
-import { EXPORT_FORMATS, type ExportFormat } from "../../../../lib/transforms";
-
-const FORMATS = EXPORT_FORMATS.map((format) => format.id);
-type Format = ExportFormat;
+const FORMATS: readonly string[] = EXPORT_FORMATS.map((format) => format.id);
 
 function parseEdits(params: URLSearchParams): IconEdits {
   const number = (key: string) => {
@@ -46,9 +33,9 @@ export const GET: APIRoute = async ({ params, request }) => {
   const prefix = params["prefix"] ?? "";
   const name = params["name"] ?? "";
   const url = new URL(request.url);
-  const format = (url.searchParams.get("format") ?? "svg") as Format;
+  const format = (url.searchParams.get("format") ?? "svg") as ExportFormat;
 
-  if (!(FORMATS as readonly string[]).includes(format)) {
+  if (!FORMATS.includes(format)) {
     return new Response("Unknown format", { status: 400 });
   }
 
@@ -61,123 +48,28 @@ export const GET: APIRoute = async ({ params, request }) => {
   const [icon, set] = await Promise.all([getIcon(prefix, name), getSet(prefix)]);
   if (!icon || !set) return new Response("Not found", { status: 404 });
 
-  const edits = parseEdits(url.searchParams);
-  const tier = set.tier;
-  const stem = `${prefix}-${name}`;
+  /* The format switch itself lives in lib/export-file.ts, shared with the
+     collection zip route, so one icon downloaded by hand and the same icon
+     inside a collection zip are byte-identical under the same filename. */
+  const result = await exportIconFile(icon, set.tier, format, parseEdits(url.searchParams), {
+    typescript: url.searchParams.get("ts") === "1",
+  });
 
-  /* Exports are a pure function of the URL, so they cache hard. Nothing here
-     is metered: export is browse, and only the search box is limited. Every
-     format uses the same immutable policy. */
-  const cache = "public, max-age=31536000, immutable";
+  if (!result.ok) return new Response("Not available", { status: 409 });
 
-  /* Every branch below assigns `response` instead of returning directly, so
-     there is a single return at the bottom for every format. */
-  let response: Response;
-
-  switch (format) {
-    case "svg":
-      response = file(buildSvg(icon, edits, tier), "image/svg+xml", `${stem}.svg`, cache);
-      break;
-
-    case "png": {
-      const png = await toPng(icon, edits, tier, edits.size ?? 512);
-      response = new Response(png, {
-        headers: {
-          "Content-Type": "image/png",
-          "Content-Disposition": `attachment; filename="${stem}-${edits.size ?? 512}.png"`,
-          "Cache-Control": cache,
-        },
-      });
-      break;
-    }
-
-    case "jsx":
-    case "tsx":
-      response = file(
-        toJsxComponent(icon, edits, tier, { typescript: format === "tsx" }),
-        "text/plain; charset=utf-8",
-        `${stem}.${format}`,
-        cache,
-      );
-      break;
-
-    case "vue":
-      response = file(
-        toVueComponent(icon, edits, tier, {
-          typescript: url.searchParams.get("ts") === "1",
-        }),
-        "text/plain; charset=utf-8",
-        `${stem}.vue`,
-        cache,
-      );
-      break;
-
-    case "svelte":
-      response = file(
-        toSvelteComponent(icon, edits, tier, {
-          typescript: url.searchParams.get("ts") === "1",
-        }),
-        "text/plain; charset=utf-8",
-        `${stem}.svelte`,
-        cache,
-      );
-      break;
-
-    case "swiftui": {
-      const result = toSwiftUi(icon, edits, tier);
-      response = new Response(result.code, {
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Content-Disposition": `attachment; filename="${result.typeName}.swift"`,
-          "Cache-Control": cache,
-          /* The island reads this to show the honest state instead of
-             pretending the download succeeded. */
-          "X-Motificons-Swiftui": result.kind,
-        },
-      });
-      break;
-    }
-
-    case "catalog": {
-      if (!capabilitiesFor(tier).assetCatalog) {
-        response = new Response("Not available", { status: 409 });
-        break;
-      }
-      const catalog = toAssetCatalog(icon, edits, tier);
-      response = new Response(new Uint8Array(catalog.zip), {
-        headers: {
-          "Content-Type": "application/zip",
-          "Content-Disposition": `attachment; filename="${catalog.filename}"`,
-          "Cache-Control": cache,
-        },
-      });
-      break;
-    }
-
-    case "datauri":
-      response = file(
-        toBase64DataUri(buildSvg(icon, edits, tier)),
-        "text/plain; charset=utf-8",
-        `${stem}.txt`,
-        cache,
-      );
-      break;
+  const headers = new Headers({
+    "Content-Type": result.file.contentType,
+    "Content-Disposition": `attachment; filename="${result.file.filename}"`,
+    /* Exports are a pure function of the URL, so they cache hard. Nothing
+       here is metered: export is browse, and only the search box is
+       limited. Every format uses the same immutable policy. */
+    "Cache-Control": "public, max-age=31536000, immutable",
+  });
+  if (result.file.swiftuiKind) {
+    /* The island reads this to show the honest state instead of pretending
+       the download succeeded. */
+    headers.set("X-Motificons-Swiftui", result.file.swiftuiKind);
   }
 
-  return response;
+  return new Response(result.file.body, { headers });
 };
-
-function file(
-  body: string,
-  type: string,
-  filename: string,
-  cache: string,
-): Response {
-  return new Response(body, {
-    headers: {
-      "Content-Type": type,
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": cache,
-    },
-  });
-}

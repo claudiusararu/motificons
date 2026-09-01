@@ -95,7 +95,12 @@ function fakeHandle(state: CollectionSnapshot = snapshot()) {
     },
     async download(format) {
       calls.push({ method: "download", input: format });
-      return { ok: true, count: current.count, format: format ?? current.styles.exportFormat };
+      return {
+        ok: true,
+        count: current.count,
+        format: format ?? current.styles.exportFormat,
+        filename: "my-icons.zip",
+      };
     },
   };
 
@@ -360,15 +365,20 @@ describe("createCollectionTools", () => {
   });
 
   describe("download_collection", () => {
-    it("starts the real zip flow and reports what was downloaded", async () => {
+    it("starts the real download and names the file the browser is saving", async () => {
       const { handle, calls } = fakeHandle();
       const result = await run(createCollectionTools(handle), "download_collection", {
         format: "png",
       });
       expect(calls).toEqual([{ method: "download", input: "png" }]);
-      expect(result["downloaded"]).toBe(true);
+      expect(result["downloading"]).toBe(true);
+      expect(result["filename"]).toBe("my-icons.zip");
       expect(result["count"]).toBe(2);
       expect(result["format"]).toBe("png");
+      /* The agent gets the filename and the count in one sentence it can
+         repeat to the person, and nothing that claims the file has landed. */
+      expect(String(result["message"])).toContain("downloading my-icons.zip");
+      expect(String(result["message"])).toContain("2 icons");
     });
 
     it("uses the remembered format when none is given", async () => {
@@ -385,16 +395,17 @@ describe("createCollectionTools", () => {
       expect(calls).toEqual([]);
     });
 
-    it("passes the panel's own error sentence back when the zip fails", async () => {
+    it("passes the panel's own error sentence back when the download cannot start", async () => {
       const { handle } = fakeHandle();
       handle.download = async () => ({
         ok: false,
         count: 0,
         format: "svg",
-        error: "Could not export arrow-right. Try again.",
+        filename: "",
+        error: "The download panel did not open in time.",
       });
       const result = await run(createCollectionTools(handle), "download_collection", {});
-      expect(result["error"]).toBe("Could not export arrow-right. Try again.");
+      expect(result["error"]).toBe("The download panel did not open in time.");
     });
   });
 });

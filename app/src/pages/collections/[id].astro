@@ -9,9 +9,9 @@ import CollectionWorkspace from "../../components/react/CollectionWorkspace";
 import { db } from "../../db/client";
 import { getPersonalWorkspace } from "../../lib/auth/workspace";
 import { getCollection } from "../../lib/workspace/collections";
-import { listCollectionItems } from "../../lib/workspace/collection-items";
+import { loadCollectionIcons } from "../../lib/workspace/collection-icons";
 import { getCollectionStyleSettings } from "../../lib/workspace/collection-style";
-import { getIcon, getSet, loadCategories, loadSetList } from "../../lib/data";
+import { loadCategories, loadSetList } from "../../lib/data";
 
 /*
  * SSR, not prerendered - per-visitor and session-gated. This URL is the
@@ -45,56 +45,12 @@ if (!collection) return await Astro.rewrite("/404");
 Astro.response.headers.set("Cache-Control", "private, no-store");
 
 /* Resolve each saved "prefix:name" id to its glyph plus the set's style-
-   engine tier - CollectionWorkspace needs the tier client-side to
-   apply the collection's style settings honestly (a T4 icon never fakes a
-   stroke it cannot take). A saved icon can no longer resolve (a set removed
-   at a pipeline re-sync, say) - `getIcon` returns null for those and they
-   are dropped from the grid rather than rendered broken; the collectionItem
-   row is left alone so a future re-sync that restores the icon brings it
-   back automatically. */
-const savedItems = await listCollectionItems(database, collection.id);
-const iconItems = (
-  await Promise.all(
-    savedItems.map(async (saved) => {
-      const [prefix, name] = saved.iconId.split(":");
-      if (!prefix || !name) return null;
-      const icon = await getIcon(prefix, name);
-      if (!icon) return null;
-      const set = await getSet(prefix);
-      /* "Download collection": the same `set` lookup `tier` already needed,
-         forwarded a little further so LICENSES.txt can be built client-side
-         without a second server round trip - a minimal server-side extension
-         of the collection items payload, for a field genuinely missing
-         client-side (CollectionIconLicense's own
-         comment covers the one case where a client-added icon has to make
-         do with less). `policy` (not `set.license` directly) is the exact
-         object [prefix]/[name].astro's own attribution snippet reads from,
-         reused here so the two never phrase a set's license differently. */
-      const policy = set?.license.policy ?? null;
-      return {
-        iconId: saved.iconId,
-        prefix,
-        name,
-        body: icon.body,
-        width: icon.width,
-        height: icon.height,
-        tier: set?.tier ?? null,
-        license:
-          set && policy
-            ? {
-                setName: set.name,
-                authorName: set.author.name,
-                authorUrl: set.author.url || null,
-                licenseName: policy.name,
-                licenseSpdx: policy.spdx || null,
-                licenseUrl: policy.url || null,
-                attributionRequired: policy.attributionRequired,
-              }
-            : null,
-      };
-    }),
-  )
-).filter((item): item is NonNullable<typeof item> => item !== null);
+   engine tier and licence - CollectionWorkspace needs the tier client-side
+   to apply the collection's style settings honestly (a T4 icon never fakes a
+   stroke it cannot take). Shared with the collection zip route, so the tiles
+   on this page and the files in the download are always the same set of
+   icons; see lib/workspace/collection-icons.ts. */
+const iconItems = await loadCollectionIcons(database, collection.id);
 
 const rawStyleSettings = await getCollectionStyleSettings(database, workspace.id, collection.id);
 const styleSettings = {

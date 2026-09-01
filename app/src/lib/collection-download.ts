@@ -1,9 +1,12 @@
 /**
- * Pure helpers for "Download collection": everything
- * about turning a collection's icons into one zip that does NOT touch the
- * network, the DOM or fflate, so it is unit-testable without a browser -
- * CollectionDownloadPanel.tsx is the one caller that wires these to real
- * fetches and a real zip.
+ * Pure helpers for "Download collection": the naming, licence text and size
+ * rules the zip needs, with no network, DOM or fflate anywhere near them, so
+ * they are unit-testable without a browser.
+ *
+ * Both sides of the download read from here. The zip itself is built on the
+ * server (lib/collection-zip.ts, behind the download route);
+ * CollectionDownloadPanel.tsx only builds the URL that asks for it, using
+ * the same slug the server puts on the file.
  */
 
 import type { ExportFormat } from "./transforms/formats";
@@ -11,9 +14,10 @@ import type { ExportFormat } from "./transforms/formats";
 /** What a collection item knows about the set it came from, for the zip's
     LICENSES.txt. Two ways to end up with one (see buildLicensesText's own
     comment for why the fields differ in richness):
-    - SSR (pages/collections/[id].astro): full - the page already resolves
-      `getSet(prefix)` for the style-engine tier, so forwarding the rest of
-      that same object's author/license fields costs nothing extra.
+    - SSR (lib/workspace/collection-icons.ts, for the collection page and
+      the zip route alike): full - it already resolves `getSet(prefix)` for
+      the style-engine tier, so forwarding the rest of that same object's
+      author/license fields costs nothing extra.
     - Added client-side via the "Add icons" panel this session, before the
       next reload (CollectionWorkspace.tsx's handlePanelToggle): only what
       SearchHit already carries (setName/license/attributionRequired) - no
@@ -28,60 +32,12 @@ export interface CollectionIconLicense {
   attributionRequired: boolean;
 }
 
-/** Every per-icon export the server can hand back, mapped to the extension
-    it would use - the fallback for when a response somehow arrives without
-    a readable Content-Disposition header (parseContentDispositionFilename
-    returns null). Matches api/export/[prefix]/[name].ts's own per-format
-    naming exactly (catalog's `.imageset.zip`, swiftui's real filename is a
-    PascalCase type name the server computes - `.swift` here is an honest
-    fallback, not a claim of matching it byte-for-byte, which is why the real
-    header is always preferred when present). */
-const DEFAULT_EXTENSIONS: Record<ExportFormat, string> = {
-  svg: "svg",
-  png: "png",
-  jsx: "jsx",
-  tsx: "tsx",
-  vue: "vue",
-  svelte: "svelte",
-  swiftui: "swift",
-  catalog: "imageset.zip",
-  datauri: "txt",
-};
-
-export function defaultExtensionFor(format: ExportFormat): string {
-  return DEFAULT_EXTENSIONS[format];
-}
-
-/** The name a per-icon zip entry falls back to when the response's own
-    Content-Disposition could not be read - same `prefix-name` stem the
-    server uses for every format except swiftui/catalog (see
-    DEFAULT_EXTENSIONS's own comment). */
-export function fallbackFilename(prefix: string, name: string, format: ExportFormat): string {
-  return `${prefix}-${name}.${defaultExtensionFor(format)}`;
-}
-
-/** Reads the filename /api/export/[prefix]/[name].ts already puts on every
-    response (`Content-Disposition: attachment; filename="..."`) - the exact
-    name a single-icon download would have used, so the zip never needs its
-    own naming logic to agree with that route's (avoids the two ever
-    drifting, same reasoning as reusing its param-building via
-    buildExportUrl). Same-origin fetch, so the header is always readable -
-    no CORS restriction to work around. */
-export function parseContentDispositionFilename(header: string | null): string | null {
-  if (!header) return null;
-  const quoted = /filename="([^"]*)"/i.exec(header);
-  if (quoted?.[1]) return quoted[1];
-  const bare = /filename=([^;]+)/i.exec(header);
-  if (bare?.[1]) return bare[1].trim();
-  return null;
-}
-
 /** Guards against two icons in one collection resolving to the same zip
     entry name - fflate's `Zippable` object is keyed by filename, so a silent
     collision would silently drop one icon's file. Same-prefix icons never
     collide (Iconify names are unique within a set, and the stem is
-    `prefix-name`); this only ever bites the swiftui fallback's PascalCase
-    typeName, or two different sets that happen to produce an identical
+    `prefix-name`); this only ever bites the SwiftUI format's PascalCase
+    type name, or two different sets that happen to produce an identical
     stem some other way. Pure - does not mutate `used`; the caller adds the
     returned name to it. */
 export function dedupeFilename(name: string, used: ReadonlySet<string>): string {
@@ -100,10 +56,10 @@ export function dedupeFilename(name: string, used: ReadonlySet<string>): string 
   return candidate;
 }
 
-/** The download panel's zip filename, and the base name if a future caller
-    ever needs one - lowercased, ASCII-safe, no leading/trailing dashes.
-    Never empty: an all-punctuation/emoji collection name still produces
-    something downloadable. */
+/** The name the collection's zip is downloaded under, and the last segment
+    of the URL that produces it - lowercased, ASCII-safe, no
+    leading/trailing dashes. Never empty: an all-punctuation/emoji
+    collection name still produces something downloadable. */
 export function slugifyFilename(name: string): string {
   const slug = name
     .trim()
@@ -111,6 +67,28 @@ export function slugifyFilename(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return slug || "collection";
+}
+
+/**
+ * The URL the Download button points at - a plain, same-origin GET that
+ * answers with the zip as an attachment.
+ *
+ * It ends in the collection's own slug so that a download manager which
+ * names files from the URL rather than from Content-Disposition still writes
+ * `my-icons.zip`. That is the whole reason this is a URL at all: an embedded
+ * browser (the ChatGPT desktop app's) hands downloads to an external manager
+ * that cannot read a blob the page built, and stops them dead.
+ */
+export function buildCollectionDownloadUrl(
+  collectionId: string,
+  collectionName: string,
+  format: ExportFormat,
+  /** Omit to let the server apply the collection's own remembered size. */
+  size?: number,
+): string {
+  const params = new URLSearchParams({ format });
+  if (size !== undefined) params.set("size", String(size));
+  return `/api/collections/${collectionId}/download/${slugifyFilename(collectionName)}.zip?${params}`;
 }
 
 /** The download panel's one-line, plain-language readout of what will

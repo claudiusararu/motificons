@@ -89,11 +89,13 @@ interface IconDetailDTO {
   license: CollectionIconLicense | null;
 }
 
-/** How long a WebMCP `download_collection` call waits for the zip flow to
-    finish before it tells the agent it cannot vouch for the result. Generous
-    on purpose: the panel fetches every icon from /api/export, and a large
-    collection on a slow connection is slow, not broken. */
-const DOWNLOAD_TIMEOUT_MS = 120_000;
+/** How long a WebMCP `download_collection` call waits for the download panel
+    to open and point the browser at the zip. Short, because that is all it
+    waits for now: the zip is built by the server behind a plain URL, so
+    "the browser has it" is the honest end of this call - how long the file
+    then takes to arrive is the browser's business, exactly as it is for a
+    person who clicked the link. */
+const DOWNLOAD_TIMEOUT_MS = 10_000;
 
 /** The style settings, in the shape the WebMCP tools speak: an icon pair
     instead of a "prefix:name" string, and no server-computed targets (an
@@ -494,8 +496,9 @@ export default function CollectionWorkspace({
               ok: false,
               count: latest.current.items.length,
               format: latest.current.styleSettings.exportFormat,
+              filename: "",
               error:
-                "The download panel is still working through the icons on the person's screen - it did not finish in time for me to confirm it.",
+                "The download panel did not open in time for me to confirm the file was handed to the person's browser.",
             });
           }, DOWNLOAD_TIMEOUT_MS);
         });

@@ -17,9 +17,9 @@
  *     tests with no DOM, no React and no network (collection-tools.test.ts).
  *   - No private path. The handle drives the exact fetches the human's own
  *     buttons drive - the same POST/DELETE the save-star sends, the same
- *     full-replace style PUT the Save styles button sends, the same
- *     client-side zip the Download button builds. An agent cannot reach a
- *     collection through a back door that skips the UI.
+ *     full-replace style PUT the Save styles button sends, the same zip URL
+ *     the Download link points at. An agent cannot reach a collection
+ *     through a back door that skips the UI.
  *   - Small payloads. Names, sets and counts; never SVG bodies. An agent
  *     that wants artwork opens the icon's own page.
  *
@@ -71,11 +71,14 @@ export interface CollectionAddResult {
   set: string;
 }
 
-/** What `download_collection` gets back once the zip flow has settled. */
+/** What `download_collection` gets back once the browser has been pointed at
+    the zip. */
 export interface CollectionDownloadResult {
   ok: boolean;
   count: number;
   format: ExportFormat;
+  /** The name the browser saves the file under, e.g. "dashboard-icons.zip". */
+  filename: string;
   /** Present when `ok` is false: the panel's own error sentence. */
   error?: string;
 }
@@ -106,6 +109,8 @@ export interface CollectionToolHandle {
   /** Opens the real "Add icons" slide-over, optionally with the embedded
       search already run for `query`. */
   openAddPanel(query: string | null): void;
+  /** Opens the download panel and points the browser at the collection's zip
+      URL, the same link the human's own Download button is. */
   download(format: ExportFormat | null): Promise<CollectionDownloadResult>;
 }
 
@@ -468,13 +473,15 @@ export function createCollectionTools(handle: CollectionToolHandle): WebMcpTool[
       title: "Download this collection as a zip",
       description:
         "Start the collection's real download: every icon exported in one " +
-        "format, wearing the collection's shared look, zipped in the person's " +
-        "own browser with a LICENSES.txt listing what each icon set asks of " +
-        "them. They watch the panel count the icons off and the browser saves " +
-        "the file - this is their download, on their machine, so only call it " +
-        "when they have asked for one. Optionally pass a format; leaving it " +
-        "out uses the format the collection already remembers. Returns once " +
-        "the zip has actually been handed to the browser.",
+        "format, wearing the collection's shared look, zipped by the server " +
+        "with a LICENSES.txt listing what each icon set asks of them. The " +
+        "download panel opens in front of the person and their browser saves " +
+        "the file, exactly as if they had clicked the button - this is their " +
+        "download, on their machine, so only call it when they have asked " +
+        "for one. Optionally pass a format; leaving it out uses the format " +
+        "the collection already remembers. Returns once the browser has the " +
+        "download; how long the file itself takes to arrive is the browser's " +
+        "business, so do not promise them it has finished.",
       inputSchema: {
         type: "object",
         properties: {
@@ -502,13 +509,14 @@ export function createCollectionTools(handle: CollectionToolHandle): WebMcpTool[
 
         const result = await handle.download((format as ExportFormat) ?? null);
         if (!result.ok) {
-          return { error: result.error ?? "The download did not finish. Ask the person to try the Download button." };
+          return { error: result.error ?? "The download did not start. Ask the person to try the Download button." };
         }
         return {
-          downloaded: true,
+          downloading: true,
+          filename: result.filename,
           count: result.count,
           format: result.format,
-          message: `Zipped ${result.count} ${result.count === 1 ? "icon" : "icons"} as ${result.format} and handed the file to the person's browser, with a LICENSES.txt inside.`,
+          message: `The person's browser is downloading ${result.filename} - ${result.count} ${result.count === 1 ? "icon" : "icons"} exported as ${result.format}, with a LICENSES.txt inside. It lands in their downloads folder.`,
         };
       },
     },
