@@ -339,6 +339,10 @@ export default function ResourceManager({
         if (!result.ok) return { ok: false, error: result.error };
         return { ok: true, collection: toSummary(result.item) };
       },
+      /* The same place clicking the new row lands - a full page load, which
+         takes this island's tools with it. Expected: the collection page
+         registers its own on arrival (collection-tools.ts). */
+      navigate: (url) => window.location.assign(url),
     }),
     /* createResource is redefined every render and closes only over stable
        values (apiBase, kind, detailHrefBase and the state setters); listing
