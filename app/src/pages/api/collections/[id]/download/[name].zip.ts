@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
+import { db } from "../../../../../db/client";
 import { resolveExportSize } from "../../../../../lib/collection-download";
+import { verifyCollectionDownloadToken } from "../../../../../lib/download-token";
 import { buildCollectionZip, type CollectionZipIcon } from "../../../../../lib/collection-zip";
 import { DEFAULT_PNG_SIZE } from "../../../../../lib/export-file";
 import { EXPORT_FORMATS, type ExportFormat } from "../../../../../lib/transforms/formats";
@@ -7,6 +9,7 @@ import { getCollection } from "../../../../../lib/workspace/collections";
 import { loadCollectionIcons } from "../../../../../lib/workspace/collection-icons";
 import { getCollectionStyleSettings } from "../../../../../lib/workspace/collection-style";
 import { requireSessionWorkspace } from "../../../../../lib/workspace/session-workspace";
+import type { Database } from "../../../../../db/client";
 
 export const prerender = false;
 
@@ -31,11 +34,21 @@ export const prerender = false;
  *
  * Errors answer in plain text rather than JSON: this URL is navigated to,
  * not fetched, so whatever comes back is read by a person.
+ *
+ * TWO WAYS IN, one of which is not a cookie. A normal browser navigates here
+ * with its session and is recognised the way every other collections route
+ * recognises a visitor. An embedded browser does not: the ChatGPT desktop
+ * app hands the click to an external download manager, which fetches this
+ * URL as a separate program with no cookie jar at all, so answering that
+ * request with 401 turned the fixed download straight back into "Stopped".
+ * The URL therefore also accepts `?token=`, a short-lived signature the
+ * collection page minted for its own owner - see lib/download-token.ts for
+ * what it claims and what it deliberately does not.
  */
 
 /** Collections live on an account, so every route here needs a signed-in
-    visitor. Accounts are free - this is the only thing standing between a
-    caller and collections. */
+    visitor, or a token they minted while signed in. Accounts are free - this
+    is the only thing standing between a caller and collections. */
 const SIGN_IN_REQUIRED_ERROR = "Sign in with your free account to use collections.";
 
 /**
@@ -54,21 +67,34 @@ const MAX_ZIP_ICONS = 300;
 
 const FORMAT_IDS: readonly string[] = EXPORT_FORMATS.map((format) => format.id);
 
+/** Everything past the gate needs exactly these two, whichever door the
+    request came through. */
+interface ZipContext {
+  database: Database;
+  workspaceId: string;
+}
+
 export const GET: APIRoute = async ({ locals, params, request }) => {
-  const ctx = await requireSessionWorkspace(locals.user);
+  const collectionId = params.id ?? "";
+  const url = new URL(request.url);
+
+  /* Session first, so a signed-in visitor in a normal browser is never
+     affected by the state of the token in the URL - a stale one changes
+     nothing for them. The token is the fallback, and it is the ONLY thing
+     the cookieless download manager has. */
+  const session = await requireSessionWorkspace(locals.user);
+  const ctx: ZipContext | null = session ?? (await tokenContext(url, collectionId));
   if (!ctx) return text(SIGN_IN_REQUIRED_ERROR, 401);
 
-  const collectionId = params.id ?? "";
-
   /* Same not-found-reads-the-same-whether-missing-or-not-yours convention as
-     every other route under lib/workspace/. */
+     every other route under lib/workspace/. The token path runs the very
+     same owner-scoped lookup - it carries the workspace id it was minted
+     with, so there is no second, unscoped way to reach a collection. */
   const collection = await getCollection(ctx.database, ctx.workspaceId, collectionId);
   if (!collection) return text("That collection could not be found.", 404);
 
   const settings = await getCollectionStyleSettings(ctx.database, ctx.workspaceId, collectionId);
   if (!settings) return text("That collection could not be found.", 404);
-
-  const url = new URL(request.url);
 
   /* The collection remembers a format; `?format=` overrides it for this one
      download without changing what it remembers. The panel sends the
@@ -142,6 +168,19 @@ export const GET: APIRoute = async ({ locals, params, request }) => {
     },
   });
 };
+
+/**
+ * The cookieless door: `?token=`, verified against this collection's id.
+ *
+ * An expired, forged, malformed or wrong-collection token is `null`, which
+ * reads identically to no token at all - the caller answers all of them with
+ * the same sign-in sentence, so the URL never reports which of those it was.
+ */
+async function tokenContext(url: URL, collectionId: string): Promise<ZipContext | null> {
+  const claims = await verifyCollectionDownloadToken(url.searchParams.get("token"), collectionId);
+  if (!claims) return null;
+  return { database: await db(), workspaceId: claims.workspaceId };
+}
 
 /** `?size=` for the formats that take one. Ignored when it is not a real
     number, so a mangled URL falls back to the collection's own setting
