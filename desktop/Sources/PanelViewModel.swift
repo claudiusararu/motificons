@@ -166,7 +166,7 @@ final class PanelViewModel: ObservableObject {
     private func scheduleSearch() {
         searchTask?.cancel()
         let term = query
-        // Hard gate: no valid Pro key, no search - local pack included.
+        // Hard gate: no valid API key, no search - local pack included.
         guard AccountStore.shared.isActive, let pack else { return }
         // An open set scopes everything to it; otherwise the filter chips rule.
         let sets = openSetPrefix.map { Set([$0]) } ?? filterSets

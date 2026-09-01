@@ -318,7 +318,7 @@ struct AboutSettingsView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.inkMuted)
 
-            Text("This app is part of Motificons Pro - instant icon search from the menu bar, with copy as SVG, PNG or code, and collections synced across your devices.")
+            Text("Instant icon search from the menu bar - copy as SVG, PNG or code, with collections synced across your devices. Free with your Motificons account.")
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -328,7 +328,7 @@ struct AboutSettingsView: View {
             Text("License")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Theme.ink)
-            Text("Motificons is proprietary software, included with your Motificons Pro purchase.")
+            Text("Motificons is free, open-source software under the MIT license - github.com/claudiusararu/motificons.")
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.inkMuted)
                 .fixedSize(horizontal: false, vertical: true)

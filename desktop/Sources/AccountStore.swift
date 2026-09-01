@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// The Pro hard gate: nothing works - local search included -
+/// The activation gate: nothing works - local search included -
 /// until a dashboard mk_ key validates against /v1/validate. Once active,
 /// the state is remembered and re-checked in the background at launch; a
 /// 401 (revoked/regenerated key) drops the app back to the gate.

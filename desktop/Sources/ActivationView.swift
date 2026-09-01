@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The in-panel Pro gate: paste the dashboard mk_ key, validate, unlock.
+/// The in-panel activation: paste the dashboard mk_ key, validate, unlock.
 struct ActivationView: View {
     @ObservedObject var account: AccountStore
     @State private var keyInput = ""
@@ -12,7 +12,7 @@ struct ActivationView: View {
             Text("Unlock Motificons")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Theme.ink)
-            Text("Motificons is included with Pro. Paste the API key from your dashboard - the same key your coding agent uses.")
+            Text("Paste the API key from your dashboard - it comes free with your Motificons account, and it is the same key your coding agent uses.")
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.inkMuted)
                 .fixedSize(horizontal: false, vertical: true)
